@@ -1,0 +1,37 @@
+appId: com.papafactory.app
+productName: PapaFactory
+copyright: Copyright © 2024 PapaFactory
+
+# Configuración de Windows
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # Configuración de firma de código
+  sign: false  # Cambiar a true cuando tengas un certificado
+  # Configuración del certificado (descomentar y configurar cuando tengas un certificado)
+  certificateFile: ./certificates/papafactory.pfx
+  certificatePassword: ${CSC_KEY_PASSWORD}
+  publisherName: PapaFactory
+  verifyUpdateCodeSignature: false
+  signDlls: false
+
+# Configuración del instalador
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: PapaFactory
+
+# Configuración general
+directories:
+  output: build-output
+  buildResources: public
+
+files:
+  - dist/**/*
+  - public/**/*
+  - electron-main.cjs 

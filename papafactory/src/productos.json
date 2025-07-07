@@ -1,0 +1,156 @@
+{
+  "productos": {
+    "papas_fritas": {
+      "categoria": "Papas Fritas",
+      "items": [
+        {
+          "id": "papas_200g",
+          "nombre": "Papas Fritas 200G",
+          "tamaño": "200G",
+          "precio": 3000,
+          "moneda": "CLP"
+        },
+        {
+          "id": "papas_350g",
+          "nombre": "Papas Fritas 350G",
+          "tamaño": "350G",
+          "precio": 3500,
+          "moneda": "CLP"
+        },
+        {
+          "id": "papas_500g",
+          "nombre": "Papas Fritas 500G",
+          "tamaño": "500G",
+          "precio": 4000,
+          "moneda": "CLP"
+        }
+      ]
+    },
+    "agregados_basicos": {
+      "categoria": "Agregados Básicos",
+      "precios_por_tamaño": {
+        "200G": 700,
+        "350G": 900,
+        "500G": 1100
+      },
+      "items": [
+        "Ají verde encurtido",
+        "Mayonesa",
+        "Mayonesa aceituna",
+        "Mayonesa ajo",
+        "Mayonesa ciboulette",
+        "Mayonesa merkén",
+        "Mostaza dulce",
+        "Salsa BBQ",
+        "Salsa tártara",
+        "Yogurt con ciboulette"
+      ]
+    },
+    "agregados_premium": {
+      "categoria": "Agregados Premium",
+      "precios_por_tamaño": {
+        "200G": 1100,
+        "350G": 1300,
+        "500G": 1500
+      },
+      "items": [
+        "Carne mechada",
+        "Cebolla caramelizada",
+        "Champiñones salteados",
+        "Choclo con crema",
+        "Pepinillo dulce",
+        "Pollo",
+        "Pollo teriyaki",
+        "Salsa de queso azul",
+        "Salsa queso cheddar",
+        "Tocino crocante"
+      ]
+    },
+    "bebidas": {
+      "categoria": "Bebidas",
+      "items": [
+        {
+          "id": "agua_mineral_500ml",
+          "nombre": "Agua Mineral",
+          "tamaño": "500ml",
+          "precio": 1500,
+          "moneda": "CLP"
+        },
+        {
+          "id": "bebida_botella_591ml",
+          "nombre": "Bebida Botella",
+          "tamaño": "591ml",
+          "precio": 2100,
+          "moneda": "CLP"
+        },
+        {
+          "id": "bebida_lata_350ml",
+          "nombre": "Bebida Lata",
+          "tamaño": "350ml",
+          "precio": 1500,
+          "moneda": "CLP"
+        },
+        {
+          "id": "jugo_botella_300ml",
+          "nombre": "Jugo Botella",
+          "tamaño": "300ml",
+          "precio": 1500,
+          "moneda": "CLP"
+        },
+        {
+          "id": "red_bull_250ml",
+          "nombre": "Red Bull",
+          "tamaño": "250ml",
+          "precio": 2200,
+          "moneda": "CLP"
+        },
+        {
+          "id": "score_energetica_500ml",
+          "nombre": "Score Energética",
+          "tamaño": "500ml",
+          "precio": 1500,
+          "moneda": "CLP"
+        }
+      ]
+    },
+    "extras": {
+      "categoria": "Extras",
+      "items": [
+        {
+          "id": "caja",
+          "nombre": "Caja",
+          "tamaño": "unidad",
+          "precio": 300,
+          "moneda": "CLP"
+        },
+        {
+          "id": "bolsa_papel",
+          "nombre": "Bolsa de Papel",
+          "tamaño": "unidad",
+          "precio": 200,
+          "moneda": "CLP"
+        },
+        {
+          "id": "pocillo_plastico",
+          "nombre": "Pocillo Plástico",
+          "tamaño": "unidad",
+          "precio": 150,
+          "moneda": "CLP"
+        },
+        {
+          "id": "pack_delivery",
+          "nombre": "Pack Delivery",
+          "tamaño": "pack",
+          "precio": 500,
+          "moneda": "CLP",
+          "descripcion": "Incluye caja de cartón + bolsa + pocillo"
+        }
+      ]
+    }
+  },
+  "configuracion": {
+    "moneda_base": "CLP",
+    "iva": 19,
+    "fecha_actualizacion": "2024-01-15"
+  }
+} 

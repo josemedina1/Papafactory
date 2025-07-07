@@ -1,0 +1,78 @@
+{
+  "name": "papafactory",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PapaFactory - Sistema de Pedidos para Papas Fritas",
+  "author": "José Medina",
+  "main": "electron-simple.js",
+  "homepage": "./",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron-build": "node build-electron.js",
+    "electron-build-simple": "node build-simple.js",
+    "electron-build-force": "node build-force.js",
+    "build-now": "node build-now.js",
+    "build-admin": "node build-admin.js",
+    "build-simple-exe": "node build-simple-exe.js",
+    "create-icon": "node create-icon.js",
+    "create-icon-simple": "node create-icon-simple.js",
+    "tauri": "tauri",
+    "tauri-dev": "tauri dev",
+    "tauri-build": "tauri build"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@tauri-apps/cli": "^2.5.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^9.1.2",
+    "electron": "^36.3.1",
+    "electron-builder": "^26.0.12",
+    "electron-is-dev": "^3.0.1",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "sharp": "^0.34.2",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.papafactory.app",
+    "productName": "PapaFactory",
+    "copyright": "Copyright © 2024 José Medina",
+    "directories": {
+      "output": "build-output"
+    },
+    "files": [
+      "dist/**/*",
+      "electron-simple.js",
+      "public/icon.png"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.png",
+      "signAndEditExecutable": true,
+      "signtoolOptions": {
+        "signingHashAlgorithms": ["sha256"]
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
