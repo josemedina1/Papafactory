@@ -5,22 +5,22 @@
       "items": [
         {
           "id": "papas_200g",
-          "nombre": "Papas Fritas 200G",
-          "tamaño": "200G",
+          "nombre": "Papas Fritas Pequeño",
+          "tamaño": "Pequeño",
           "precio": 3000,
           "moneda": "CLP"
         },
         {
           "id": "papas_350g",
-          "nombre": "Papas Fritas 350G",
-          "tamaño": "350G",
+          "nombre": "Papas Fritas Mediano",
+          "tamaño": "Mediano",
           "precio": 3500,
           "moneda": "CLP"
         },
         {
           "id": "papas_500g",
-          "nombre": "Papas Fritas 500G",
-          "tamaño": "500G",
+          "nombre": "Papas Fritas Grande",
+          "tamaño": "Grande",
           "precio": 4000,
           "moneda": "CLP"
         }
@@ -29,9 +29,9 @@
     "agregados_basicos": {
       "categoria": "Agregados Básicos",
       "precios_por_tamaño": {
-        "200G": 700,
-        "350G": 900,
-        "500G": 1100
+        "Pequeño": 700,
+        "Mediano": 900,
+        "Grande": 1100
       },
       "items": [
         "Ají verde encurtido",
@@ -49,9 +49,9 @@
     "agregados_premium": {
       "categoria": "Agregados Premium",
       "precios_por_tamaño": {
-        "200G": 1100,
-        "350G": 1300,
-        "500G": 1500
+        "Pequeño": 1100,
+        "Mediano": 1300,
+        "Grande": 1500
       },
       "items": [
         "Carne mechada",
@@ -80,7 +80,7 @@
           "id": "bebida_botella_591ml",
           "nombre": "Bebida Botella",
           "tamaño": "591ml",
-          "precio": 2100,
+          "precio": 1700,
           "moneda": "CLP"
         },
         {
@@ -151,6 +151,6 @@
   "configuracion": {
     "moneda_base": "CLP",
     "iva": 19,
-    "fecha_actualizacion": "2024-01-15"
+    "fecha_actualizacion": "2024-12-19"
   }
 } 

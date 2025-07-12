@@ -21,7 +21,7 @@ function ModalAgregados({
 }) {
   if (!show || !producto) return null;
 
-  const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto.tamaño || '200G');
+  const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto.tamaño || 'Pequeño');
 
   const formatearPrecio = (precio: number): string => {
     return new Intl.NumberFormat('es-CL', {
@@ -73,18 +73,18 @@ function ModalAgregados({
 
   const getTamañoNombre = (tamaño: string): string => {
     switch (tamaño) {
-      case '200G':
+      case 'Pequeño':
         return 'PEQUEÑAS'
-      case '350G':
+      case 'Mediano':
         return 'MEDIANAS'
-      case '500G':
+      case 'Grande':
         return 'GRANDES'
       default:
         return tamaño
     }
   }
 
-  const gramajes = ['200G', '350G', '500G'];
+  const gramajes = ['Pequeño', 'Mediano', 'Grande'];
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -761,6 +761,7 @@ function App() {
             margin: 0;
             padding: 0;
             width: 80mm;
+            font-weight: bold;
         }
         
         /* PÁGINA 1 - COPIA CLIENTE (MÍNIMA) */
@@ -771,6 +772,7 @@ function App() {
             padding: 10mm 5mm;
             font-size: 16px;
             min-height: 40mm;
+            font-weight: bold;
         }
         .numero-ticket {
             font-size: 24px;
@@ -787,12 +789,14 @@ function App() {
             padding: 3mm;
             font-size: 10px;
             line-height: 1.2;
+            font-weight: bold;
         }
         .header-comercio {
             text-align: center;
             border-bottom: 1px solid #000;
             padding-bottom: 2mm;
             margin-bottom: 3mm;
+            font-weight: bold;
         }
         .logo-comercio {
             font-size: 14px;
@@ -802,6 +806,7 @@ function App() {
         .info-empresa {
             font-size: 8px;
             margin-bottom: 1mm;
+            font-weight: bold;
         }
         .tipo-copia-comercio {
             background-color: #000;
@@ -825,11 +830,13 @@ function App() {
             text-align: center;
             font-size: 8px;
             margin-bottom: 3mm;
+            font-weight: bold;
         }
         .item {
             margin-bottom: 2mm;
             border-bottom: 1px dotted #999;
             padding-bottom: 1mm;
+            font-weight: bold;
         }
         .item-principal {
             font-weight: bold;
@@ -845,11 +852,13 @@ function App() {
             justify-content: space-between;
             color: #000;
             margin-bottom: 1mm;
+            font-weight: bold;
         }
         .total-section {
             border-top: 2px solid #000;
             margin-top: 3mm;
             padding-top: 2mm;
+            font-weight: bold;
         }
         .total {
             font-size: 12px;
@@ -867,6 +876,7 @@ function App() {
             margin-top: 3mm;
             border-top: 1px solid #999;
             padding-top: 2mm;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -1013,6 +1023,7 @@ function App() {
             margin: 0;
             padding: 0;
             width: 80mm;
+            font-weight: bold;
         }
         
         /* PÁGINA 1 - COPIA CLIENTE (MÍNIMA) */
@@ -1023,6 +1034,7 @@ function App() {
             padding: 10mm 5mm;
             font-size: 16px;
             min-height: 40mm;
+            font-weight: bold;
         }
         .numero-ticket {
             font-size: 24px;
@@ -1036,6 +1048,7 @@ function App() {
             font-size: 10px;
             margin-top: 5mm;
             color: #666;
+            font-weight: bold;
         }
         
         /* PÁGINA 2 - COPIA COMERCIO (DETALLADA) */
@@ -1044,12 +1057,14 @@ function App() {
             padding: 3mm;
             font-size: 10px;
             line-height: 1.2;
+            font-weight: bold;
         }
         .header-comercio {
             text-align: center;
             border-bottom: 1px solid #000;
             padding-bottom: 2mm;
             margin-bottom: 3mm;
+            font-weight: bold;
         }
         .logo-comercio {
             font-size: 14px;
@@ -1059,6 +1074,7 @@ function App() {
         .info-empresa {
             font-size: 8px;
             margin-bottom: 1mm;
+            font-weight: bold;
         }
         .tipo-copia-comercio {
             background-color: #000;
@@ -1082,11 +1098,13 @@ function App() {
             text-align: center;
             font-size: 8px;
             margin-bottom: 3mm;
+            font-weight: bold;
         }
         .item {
             margin-bottom: 2mm;
             border-bottom: 1px dotted #999;
             padding-bottom: 1mm;
+            font-weight: bold;
         }
         .item-principal {
             font-weight: bold;
@@ -1102,11 +1120,13 @@ function App() {
             justify-content: space-between;
             color: #000;
             margin-bottom: 1mm;
+            font-weight: bold;
         }
         .total-section {
             border-top: 2px solid #000;
             margin-top: 3mm;
             padding-top: 2mm;
+            font-weight: bold;
         }
         .total {
             font-size: 12px;
@@ -1124,6 +1144,7 @@ function App() {
             margin-top: 3mm;
             border-top: 1px solid #999;
             padding-top: 2mm;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -1220,11 +1241,11 @@ function App() {
 
   const getImagenPapa = (tamaño: string) => {
     switch(tamaño) {
-      case '200G':
+      case 'Pequeño':
         return 'https://www.lavanguardia.com/files/og_thumbnail/uploads/2020/08/19/5f3d3a3f2bea3.jpeg'
-      case '350G':
+      case 'Mediano':
         return 'https://buendia-pro-app.s3.eu-west-3.amazonaws.com/s3fs-public/styles/highlight_large/public/2020-05/bruselas-guia-comer-dormir-comer-patatas-fritas-cono_0.jpg.webp?VersionId=V3iFMz8GEYQEXbD38DcnP_HYcICagaoO&itok=xGh7mylF'
-      case '500G':
+      case 'Grande':
         return 'https://i0.wp.com/foodandpleasure.com/wp-content/uploads/2022/06/papas-fritas-cdmx-frituurmx-1-e1656219926660.jpg?fit=1080%2C901&ssl=1'
       default:
         return 'https://www.lavanguardia.com/files/og_thumbnail/uploads/2020/08/19/5f3d3a3f2bea3.jpeg'
@@ -1268,11 +1289,11 @@ function App() {
   // Función preparada para convertir tamaño a nombre (funcionalidad futura)
   const getTamañoNombre = (tamaño: string): string => {
     switch (tamaño) {
-      case '200G':
+      case 'Pequeño':
         return 'PEQUEÑAS'
-      case '350G':
+      case 'Mediano':
         return 'MEDIANAS'
-      case '500G':
+      case 'Grande':
         return 'GRANDES'
       default:
         return tamaño
@@ -1281,11 +1302,11 @@ function App() {
 
   const getTamañoParaPedido = (tamaño: string): string => {
     switch (tamaño) {
-      case '200G':
+      case 'Pequeño':
         return 'PEQUEÑAS'
-      case '350G':
+      case 'Mediano':
         return 'MEDIANAS'
-      case '500G':
+      case 'Grande':
         return 'GRANDES'
       default:
         return tamaño
@@ -1908,7 +1929,7 @@ function App() {
                 gap: '10px',
                 justifyContent: 'flex-start'
               }}>
-                {['200G', '350G', '500G'].map((tamaño) => (
+                {['Pequeño', 'Mediano', 'Grande'].map((tamaño) => (
                   <button
                     key={tamaño}
                     onClick={() => setTamañoSeleccionado(tamaño)}
