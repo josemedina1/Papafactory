@@ -498,15 +498,18 @@ function App() {
                 width: 58mm;
                 padding: 4mm;
                 margin: 0;
+                font-weight: bold;
               }
               .ticket-section {
                 text-align: center;
                 padding: 0 0 10px 0;
+                font-weight: bold;
               }
               .ticket-title {
                 font-size: 16px;
                 margin-bottom: 5px;
                 letter-spacing: 2px;
+                font-weight: bold;
               }
               .ticket-number {
                 font-size: 32px;
@@ -535,15 +538,18 @@ function App() {
               }
               .item {
                 margin-bottom: 8px;
+                font-weight: bold;
               }
               .producto-linea {
                 display: flex;
                 align-items: flex-start;
                 margin-bottom: 4px;
+                font-weight: bold;
               }
               .producto-numero {
                 margin-right: 5px;
                 flex-shrink: 0;
+                font-weight: bold;
               }
               .producto-nombre {
                 flex-grow: 1;
@@ -552,6 +558,7 @@ function App() {
                 word-wrap: break-word;
                 hyphens: auto;
                 line-height: 1.2;
+                font-weight: bold;
               }
               .producto-nombre::after {
                 content: "";
@@ -561,11 +568,13 @@ function App() {
                 position: relative;
                 z-index: 1;
                 background: white;
+                font-weight: bold;
               }
               .agregados-titulo {
                 margin-left: 15px;
                 margin-bottom: 4px;
                 font-size: 11px;
+                font-weight: bold;
               }
               .agregado {
                 margin-left: 15px;
@@ -573,6 +582,7 @@ function App() {
                 align-items: flex-start;
                 margin-bottom: 2px;
                 font-size: 10px;
+                font-weight: bold;
               }
               .agregado-nombre {
                 flex-grow: 1;
@@ -582,6 +592,7 @@ function App() {
                 hyphens: auto;
                 line-height: 1.2;
                 font-size: 10px;
+                font-weight: bold;
               }
               .agregado-nombre::after {
                 content: "";
@@ -592,6 +603,7 @@ function App() {
                 z-index: 1;
                 background: white;
                 font-size: 10px;
+                font-weight: bold;
               }
               .linea-divisoria {
                 border-top: 2px solid black;
@@ -601,6 +613,7 @@ function App() {
                 display: flex;
                 align-items: baseline;
                 margin-top: 5px;
+                font-weight: bold;
               }
               .total-texto {
                 font-weight: bold;
@@ -608,6 +621,7 @@ function App() {
               }
               .total-simbolo {
                 margin-right: 5px;
+                font-weight: bold;
               }
               .total-monto {
                 flex-grow: 1;
@@ -618,14 +632,19 @@ function App() {
                 text-align: center;
                 font-size: 12px;
                 margin: 10px 0;
+                font-weight: bold;
               }
               .direccion {
                 text-align: center;
                 font-size: 12px;
                 margin: 10px 0;
+                font-weight: bold;
               }
               .page-break {
                 page-break-after: always;
+              }
+              span {
+                font-weight: bold;
               }
             </style>
           </head>

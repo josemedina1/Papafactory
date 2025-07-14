@@ -761,6 +761,7 @@ function App() {
             margin: 0;
             padding: 0;
             width: 80mm;
+            font-weight: bold;
         }
         
         /* PÁGINA 1 - COPIA CLIENTE (MÍNIMA) */
@@ -771,6 +772,7 @@ function App() {
             padding: 10mm 5mm;
             font-size: 16px;
             min-height: 40mm;
+            font-weight: bold;
         }
         .numero-ticket {
             font-size: 24px;
@@ -787,12 +789,14 @@ function App() {
             padding: 3mm;
             font-size: 10px;
             line-height: 1.2;
+            font-weight: bold;
         }
         .header-comercio {
             text-align: center;
             border-bottom: 1px solid #000;
             padding-bottom: 2mm;
             margin-bottom: 3mm;
+            font-weight: bold;
         }
         .logo-comercio {
             font-size: 14px;
@@ -802,6 +806,7 @@ function App() {
         .info-empresa {
             font-size: 8px;
             margin-bottom: 1mm;
+            font-weight: bold;
         }
         .tipo-copia-comercio {
             background-color: #000;
@@ -825,11 +830,13 @@ function App() {
             text-align: center;
             font-size: 8px;
             margin-bottom: 3mm;
+            font-weight: bold;
         }
         .item {
             margin-bottom: 2mm;
             border-bottom: 1px dotted #999;
             padding-bottom: 1mm;
+            font-weight: bold;
         }
         .item-principal {
             font-weight: bold;
@@ -845,11 +852,13 @@ function App() {
             justify-content: space-between;
             color: #000;
             margin-bottom: 1mm;
+            font-weight: bold;
         }
         .total-section {
             border-top: 2px solid #000;
             margin-top: 3mm;
             padding-top: 2mm;
+            font-weight: bold;
         }
         .total {
             font-size: 12px;
@@ -867,6 +876,10 @@ function App() {
             margin-top: 3mm;
             border-top: 1px solid #999;
             padding-top: 2mm;
+            font-weight: bold;
+        }
+        span {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -1013,6 +1026,7 @@ function App() {
             margin: 0;
             padding: 0;
             width: 80mm;
+            font-weight: bold;
         }
         
         /* PÁGINA 1 - COPIA CLIENTE (MÍNIMA) */
@@ -1023,6 +1037,7 @@ function App() {
             padding: 10mm 5mm;
             font-size: 16px;
             min-height: 40mm;
+            font-weight: bold;
         }
         .numero-ticket {
             font-size: 24px;
@@ -1036,6 +1051,7 @@ function App() {
             font-size: 10px;
             margin-top: 5mm;
             color: #666;
+            font-weight: bold;
         }
         
         /* PÁGINA 2 - COPIA COMERCIO (DETALLADA) */
@@ -1044,12 +1060,14 @@ function App() {
             padding: 3mm;
             font-size: 10px;
             line-height: 1.2;
+            font-weight: bold;
         }
         .header-comercio {
             text-align: center;
             border-bottom: 1px solid #000;
             padding-bottom: 2mm;
             margin-bottom: 3mm;
+            font-weight: bold;
         }
         .logo-comercio {
             font-size: 14px;
@@ -1059,6 +1077,7 @@ function App() {
         .info-empresa {
             font-size: 8px;
             margin-bottom: 1mm;
+            font-weight: bold;
         }
         .tipo-copia-comercio {
             background-color: #000;
@@ -1082,11 +1101,13 @@ function App() {
             text-align: center;
             font-size: 8px;
             margin-bottom: 3mm;
+            font-weight: bold;
         }
         .item {
             margin-bottom: 2mm;
             border-bottom: 1px dotted #999;
             padding-bottom: 1mm;
+            font-weight: bold;
         }
         .item-principal {
             font-weight: bold;
@@ -1102,11 +1123,13 @@ function App() {
             justify-content: space-between;
             color: #000;
             margin-bottom: 1mm;
+            font-weight: bold;
         }
         .total-section {
             border-top: 2px solid #000;
             margin-top: 3mm;
             padding-top: 2mm;
+            font-weight: bold;
         }
         .total {
             font-size: 12px;
@@ -1124,6 +1147,10 @@ function App() {
             margin-top: 3mm;
             border-top: 1px solid #999;
             padding-top: 2mm;
+            font-weight: bold;
+        }
+        span {
+            font-weight: bold;
         }
     </style>
 </head>

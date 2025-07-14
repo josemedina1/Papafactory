@@ -80,7 +80,7 @@
           "id": "bebida_botella_591ml",
           "nombre": "Bebida Botella",
           "tamaño": "591ml",
-          "precio": 2100,
+          "precio": 1700,
           "moneda": "CLP"
         },
         {
@@ -151,6 +151,6 @@
   "configuracion": {
     "moneda_base": "CLP",
     "iva": 19,
-    "fecha_actualizacion": "2024-01-15"
+    "fecha_actualizacion": "2024-12-20"
   }
 } 
