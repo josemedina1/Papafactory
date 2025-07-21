@@ -506,18 +506,18 @@ function App() {
                 font-weight: bold;
               }
               .ticket-title {
-                font-size: 16px;
+                font-size: 18px;
                 margin-bottom: 5px;
                 letter-spacing: 2px;
                 font-weight: bold;
               }
               .ticket-number {
-                font-size: 32px;
+                font-size: 36px;
                 font-weight: bold;
                 margin: 10px 0;
               }
               .ticket-copy {
-                font-size: 14px;
+                font-size: 16px;
                 font-weight: bold;
                 margin: 5px 0;
                 text-align: center;
@@ -531,7 +531,7 @@ function App() {
               }
               .titulo {
                 text-align: center;
-                font-size: 14px;
+                font-size: 16px;
                 font-weight: bold;
                 margin: 15px 0;
                 letter-spacing: 1px;
@@ -550,6 +550,7 @@ function App() {
                 margin-right: 5px;
                 flex-shrink: 0;
                 font-weight: bold;
+                font-size: 12px;
               }
               .producto-nombre {
                 flex-grow: 1;
@@ -557,8 +558,9 @@ function App() {
                 padding-right: 5px;
                 word-wrap: break-word;
                 hyphens: auto;
-                line-height: 1.2;
+                line-height: 1.3;
                 font-weight: bold;
+                font-size: 12px;
               }
               .producto-nombre::after {
                 content: "";
@@ -569,11 +571,12 @@ function App() {
                 z-index: 1;
                 background: white;
                 font-weight: bold;
+                font-size: 12px;
               }
               .agregados-titulo {
                 margin-left: 15px;
                 margin-bottom: 4px;
-                font-size: 11px;
+                font-size: 12px;
                 font-weight: bold;
               }
               .agregado {
@@ -581,7 +584,7 @@ function App() {
                 display: flex;
                 align-items: flex-start;
                 margin-bottom: 2px;
-                font-size: 10px;
+                font-size: 11px;
                 font-weight: bold;
               }
               .agregado-nombre {
@@ -590,8 +593,8 @@ function App() {
                 padding-right: 5px;
                 word-wrap: break-word;
                 hyphens: auto;
-                line-height: 1.2;
-                font-size: 10px;
+                line-height: 1.3;
+                font-size: 11px;
                 font-weight: bold;
               }
               .agregado-nombre::after {
@@ -602,7 +605,7 @@ function App() {
                 position: relative;
                 z-index: 1;
                 background: white;
-                font-size: 10px;
+                font-size: 11px;
                 font-weight: bold;
               }
               .linea-divisoria {

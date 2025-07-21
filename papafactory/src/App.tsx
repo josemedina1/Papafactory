@@ -770,12 +770,12 @@ function App() {
             width: 80mm;
             text-align: center;
             padding: 10mm 5mm;
-            font-size: 16px;
+            font-size: 18px;
             min-height: 40mm;
             font-weight: bold;
         }
         .numero-ticket {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             border: 3px solid #000;
             padding: 10mm;
@@ -787,8 +787,8 @@ function App() {
         .pagina-comercio {
             width: 80mm;
             padding: 3mm;
-            font-size: 10px;
-            line-height: 1.2;
+            font-size: 12px;
+            line-height: 1.3;
             font-weight: bold;
         }
         .header-comercio {
@@ -799,12 +799,12 @@ function App() {
             font-weight: bold;
         }
         .logo-comercio {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 1mm;
         }
         .info-empresa {
-            font-size: 8px;
+            font-size: 10px;
             margin-bottom: 1mm;
             font-weight: bold;
         }
@@ -814,7 +814,7 @@ function App() {
             padding: 2mm;
             margin: 3mm 0;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 12px;
             text-align: center;
         }
         .orden-info-comercio {
@@ -824,11 +824,11 @@ function App() {
             padding: 2mm;
             margin: 2mm 0;
             border: 1px solid #000;
-            font-size: 12px;
+            font-size: 14px;
         }
         .fecha-comercio {
             text-align: center;
-            font-size: 8px;
+            font-size: 10px;
             margin-bottom: 3mm;
             font-weight: bold;
         }
@@ -840,13 +840,13 @@ function App() {
         }
         .item-principal {
             font-weight: bold;
-            font-size: 9px;
+            font-size: 11px;
             display: flex;
             justify-content: space-between;
             margin-bottom: 1mm;
         }
         .agregado {
-            font-size: 8px;
+            font-size: 10px;
             margin-left: 3mm;
             display: flex;
             justify-content: space-between;
@@ -861,7 +861,7 @@ function App() {
             font-weight: bold;
         }
         .total {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
             text-align: center;
             background-color: #f0f0f0;
@@ -872,7 +872,7 @@ function App() {
         }
         .footer {
             text-align: center;
-            font-size: 8px;
+            font-size: 10px;
             margin-top: 3mm;
             border-top: 1px solid #999;
             padding-top: 2mm;
@@ -1035,12 +1035,12 @@ function App() {
             width: 80mm;
             text-align: center;
             padding: 10mm 5mm;
-            font-size: 16px;
+            font-size: 18px;
             min-height: 40mm;
             font-weight: bold;
         }
         .numero-ticket {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             border: 3px solid #000;
             padding: 10mm;
@@ -1058,8 +1058,8 @@ function App() {
         .pagina-comercio {
             width: 80mm;
             padding: 3mm;
-            font-size: 10px;
-            line-height: 1.2;
+            font-size: 12px;
+            line-height: 1.3;
             font-weight: bold;
         }
         .header-comercio {
@@ -1070,12 +1070,12 @@ function App() {
             font-weight: bold;
         }
         .logo-comercio {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 1mm;
         }
         .info-empresa {
-            font-size: 8px;
+            font-size: 10px;
             margin-bottom: 1mm;
             font-weight: bold;
         }
@@ -1085,7 +1085,7 @@ function App() {
             padding: 2mm;
             margin: 3mm 0;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 12px;
             text-align: center;
         }
         .orden-info-comercio {
@@ -1095,11 +1095,11 @@ function App() {
             padding: 2mm;
             margin: 2mm 0;
             border: 1px solid #000;
-            font-size: 12px;
+            font-size: 14px;
         }
         .fecha-comercio {
             text-align: center;
-            font-size: 8px;
+            font-size: 10px;
             margin-bottom: 3mm;
             font-weight: bold;
         }
@@ -1111,13 +1111,13 @@ function App() {
         }
         .item-principal {
             font-weight: bold;
-            font-size: 9px;
+            font-size: 11px;
             display: flex;
             justify-content: space-between;
             margin-bottom: 1mm;
         }
         .agregado {
-            font-size: 8px;
+            font-size: 10px;
             margin-left: 3mm;
             display: flex;
             justify-content: space-between;
@@ -1132,7 +1132,7 @@ function App() {
             font-weight: bold;
         }
         .total {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
             text-align: center;
             background-color: #f0f0f0;
@@ -1143,7 +1143,7 @@ function App() {
         }
         .footer {
             text-align: center;
-            font-size: 8px;
+            font-size: 10px;
             margin-top: 3mm;
             border-top: 1px solid #999;
             padding-top: 2mm;
