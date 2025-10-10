@@ -26,6 +26,32 @@
         }
       ]
     },
+    "chorrillanas": {
+      "categoria": "Chorrillanas",
+      "items": [
+        {
+          "id": "chorrillana_chica",
+          "nombre": "Papa Chorrillana Chica",
+          "tamaño": "Chica",
+          "precio": 7200,
+          "moneda": "CLP"
+        },
+        {
+          "id": "chorrillana_mediana",
+          "nombre": "Papa Chorrillana Mediana",
+          "tamaño": "Mediana",
+          "precio": 8500,
+          "moneda": "CLP"
+        },
+        {
+          "id": "chorrillana_grande",
+          "nombre": "Papa Chorrillana Grande",
+          "tamaño": "Grande",
+          "precio": 9700,
+          "moneda": "CLP"
+        }
+      ]
+    },
     "agregados_basicos": {
       "categoria": "Agregados Básicos",
       "precios_por_tamaño": {

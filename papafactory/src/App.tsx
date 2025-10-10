@@ -10,6 +10,7 @@ function ModalAgregados({
   producto, 
   onAgregarAgregado,
   onDecrementarAgregado,
+  onCambiarTamañoProducto,
   agregadosExistentes = []
 }: { 
   show: boolean; 
@@ -17,11 +18,14 @@ function ModalAgregados({
   producto: Producto | null;
   onAgregarAgregado: (agregado: Agregado) => void;
   onDecrementarAgregado: (nombreAgregado: string) => void;
+  onCambiarTamañoProducto?: (nuevoTamaño: string) => void;
   agregadosExistentes?: AgregadoEnPedido[];
 }) {
   if (!show || !producto) return null;
 
-  const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto.tamaño || '200G');
+  const esChorrillana = producto.id.includes('chorrillana_');
+  const esPapa = producto.id.includes('papas_');
+  const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto.tamaño || (esPapa ? '200G' : 'Chica'));
 
   const formatearPrecio = (precio: number): string => {
     return new Intl.NumberFormat('es-CL', {
@@ -32,6 +36,10 @@ function ModalAgregados({
 
   const handleGramajeClick = (gramaje: string) => {
     setGramajeSelecionado(gramaje);
+    // Notificar el cambio de tamaño del producto
+    if (onCambiarTamañoProducto) {
+      onCambiarTamañoProducto(gramaje);
+    }
   };
 
   const handleAgregadoClick = (nombre: string, precio: number, tipo: 'basico' | 'premium') => {
@@ -49,15 +57,34 @@ function ModalAgregados({
     }
   };
 
+  const getPrecioAgregado = (tamaño: string, tipo: 'basico' | 'premium'): number => {
+    // Mapear tamaños de chorrillana a tamaños de papa para precios
+    let tamañoParaPrecio = tamaño;
+    if (esChorrillana) {
+      switch (tamaño) {
+        case 'Chica':
+          tamañoParaPrecio = '200G';
+          break;
+        case 'Mediana':
+          tamañoParaPrecio = '350G';
+          break;
+        case 'Grande':
+          tamañoParaPrecio = '500G';
+          break;
+      }
+    }
+    
+    if (tipo === 'basico') {
+      return productos.productos.agregados_basicos.precios_por_tamaño[tamañoParaPrecio as keyof typeof productos.productos.agregados_basicos.precios_por_tamaño];
+    } else {
+      return productos.productos.agregados_premium.precios_por_tamaño[tamañoParaPrecio as keyof typeof productos.productos.agregados_premium.precios_por_tamaño];
+    }
+  };
+
   const handleCambiarCantidadAgregado = (nombreAgregado: string, cambio: number, tipo: 'basico' | 'premium') => {
     if (cambio > 0) {
       // Incrementar: agregar el agregado
-      let precio = 0
-      if (tipo === 'basico') {
-        precio = productos.productos.agregados_basicos.precios_por_tamaño[gramajeSelecionado as keyof typeof productos.productos.agregados_basicos.precios_por_tamaño]
-      } else {
-        precio = productos.productos.agregados_premium.precios_por_tamaño[gramajeSelecionado as keyof typeof productos.productos.agregados_premium.precios_por_tamaño]
-      }
+      const precio = getPrecioAgregado(gramajeSelecionado, tipo);
       
       onAgregarAgregado({
         nombre: nombreAgregado,
@@ -72,25 +99,38 @@ function ModalAgregados({
   };
 
   const getTamañoNombre = (tamaño: string): string => {
-    switch (tamaño) {
-      case '200G':
-        return 'PEQUEÑAS'
-      case '350G':
-        return 'MEDIANAS'
-      case '500G':
-        return 'GRANDES'
-      default:
-        return tamaño
+    if (esChorrillana) {
+      switch (tamaño) {
+        case 'Chica':
+          return 'CHICA'
+        case 'Mediana':
+          return 'MEDIANA'
+        case 'Grande':
+          return 'GRANDE'
+        default:
+          return tamaño.toUpperCase()
+      }
+    } else {
+      switch (tamaño) {
+        case '200G':
+          return 'PEQUEÑAS'
+        case '350G':
+          return 'MEDIANAS'
+        case '500G':
+          return 'GRANDES'
+        default:
+          return tamaño
+      }
     }
   }
 
-  const gramajes = ['200G', '350G', '500G'];
+  const gramajes = esChorrillana ? ['Chica', 'Mediana', 'Grande'] : ['200G', '350G', '500G'];
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
         <div className="modal-header">
-          <h2>Agregados Disponibles</h2>
+          <h2>{esChorrillana ? 'Chorrillana - Agregados Disponibles' : 'Papas Fritas - Agregados Disponibles'}</h2>
           <button className="btn-cerrar" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
@@ -111,7 +151,7 @@ function ModalAgregados({
               <h3>Agregados Básicos</h3>
               <div className="agregados-grid">
                 {productos.productos.agregados_basicos.items.map((agregado, index) => {
-                  const precio = productos.productos.agregados_basicos.precios_por_tamaño[gramajeSelecionado as keyof typeof productos.productos.agregados_basicos.precios_por_tamaño];
+                  const precio = getPrecioAgregado(gramajeSelecionado, 'basico');
                   const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado);
                   return (
                                          <div 
@@ -155,7 +195,7 @@ function ModalAgregados({
               <h3>Agregados Premium</h3>
               <div className="agregados-grid">
                 {productos.productos.agregados_premium.items.map((agregado, index) => {
-                  const precio = productos.productos.agregados_premium.precios_por_tamaño[gramajeSelecionado as keyof typeof productos.productos.agregados_premium.precios_por_tamaño];
+                  const precio = getPrecioAgregado(gramajeSelecionado, 'premium');
                   const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado);
                   return (
                                          <div 
@@ -554,12 +594,12 @@ function App() {
   }
 
   const agregarProductoAlPedido = (producto: Producto) => {
-    // Si es una papa frita, abrir modal de agregados
-    if (producto.id.includes('papas_')) {
+    // Si es una papa frita o chorrillana, abrir modal de agregados
+    if (producto.id.includes('papas_') || producto.id.includes('chorrillana_')) {
       // Crear el item inmediatamente en el pedido
       const nuevoItem: ItemPedido = {
         id: `${producto.id}-${Date.now()}`,
-        tipo: 'papa',
+        tipo: producto.id.includes('papas_') ? 'papa' : 'chorrillana',
         producto: producto,
         agregados: [],
         cantidad: 1,
@@ -632,8 +672,8 @@ function App() {
   }
 
   const handleItemClick = (item: ItemPedido) => {
-    // Solo mostrar modal para papas fritas
-    if (item.producto.id.includes('papas_')) {
+    // Mostrar modal para papas fritas y chorrillanas
+    if (item.producto.id.includes('papas_') || item.producto.id.includes('chorrillana_')) {
       setProductoParaAgregados(item.producto)
       setItemEditandoId(item.id)
       setShowModalAgregados(true)
@@ -660,6 +700,64 @@ function App() {
         
         // Recalcular subtotal
         itemActualizado.subtotal = calcularSubtotalItem(itemActualizado)
+        return itemActualizado
+      }
+      return item
+    })
+
+    setPedidoActual(pedidoActualizado)
+  }
+
+  const handleCambiarTamañoProducto = (nuevoTamaño: string) => {
+    if (!itemEditandoId) return
+
+    const pedidoActualizado = pedidoActual.map(item => {
+      if (item.id === itemEditandoId) {
+        let nuevoProducto = { ...item.producto }
+        
+        // Si es chorrillana, actualizar el precio según el tamaño
+        if (item.producto.id.includes('chorrillana_')) {
+          const chorrillanas = productos.productos.chorrillanas.items
+          const chorrillanaNueva = chorrillanas.find(c => c.tamaño === nuevoTamaño)
+          
+          if (chorrillanaNueva) {
+            nuevoProducto = {
+              ...nuevoProducto,
+              id: chorrillanaNueva.id,
+              nombre: chorrillanaNueva.nombre,
+              tamaño: chorrillanaNueva.tamaño,
+              precio: chorrillanaNueva.precio
+            }
+          }
+        } else if (item.producto.id.includes('papas_')) {
+          // Si es papa, actualizar el precio según el tamaño
+          const papas = productos.productos.papas_fritas.items
+          const papaNueva = papas.find(p => p.tamaño === nuevoTamaño)
+          
+          if (papaNueva) {
+            nuevoProducto = {
+              ...nuevoProducto,
+              id: papaNueva.id,
+              nombre: papaNueva.nombre,
+              tamaño: papaNueva.tamaño,
+              precio: papaNueva.precio
+            }
+          }
+        }
+
+        const itemActualizado = {
+          ...item,
+          id: `${nuevoProducto.id}-${Date.now()}`,
+          producto: nuevoProducto
+        }
+        
+        // Recalcular subtotal
+        itemActualizado.subtotal = calcularSubtotalItem(itemActualizado)
+        
+        // Actualizar el itemEditandoId con el nuevo id
+        setItemEditandoId(itemActualizado.id)
+        setProductoParaAgregados(nuevoProducto)
+        
         return itemActualizado
       }
       return item
@@ -1258,6 +1356,19 @@ function App() {
     }
   }
 
+  const getImagenChorrillana = (id: string) => {
+    switch(id) {
+      case 'chorrillana_chica':
+        return 'https://i.blogs.es/29d125/chorrillana-650/650_1200.jpg'
+      case 'chorrillana_mediana':
+        return 'https://curiyorkdelivery.cl/wp-content/uploads/2023/11/YEK01232-scaled.jpg'
+      case 'chorrillana_grande':
+        return 'https://tb-static.uber.com/prod/image-proc/processed_images/89fe4947f34e9edeaf3bcb469322020c/58f691da9eaef86b0b51f9b2c483fe63.jpeg'
+      default:
+        return 'https://i.blogs.es/29d125/chorrillana-650/650_1200.jpg'
+    }
+  }
+
   const getImagenBebida = (id: string) => {
     switch(id) {
       case 'agua_mineral_500ml':
@@ -1417,6 +1528,38 @@ function App() {
             ))}
           </div>
 
+          {/* Sección Chorrillanas */}
+          <div className="section-title">CHORRILLANAS</div>
+          <div className="papas-grid">
+            {productos.productos.chorrillanas.items.map((chorrillana) => (
+              <div 
+                key={chorrillana.id} 
+                className="papa-card"
+                onClick={() => agregarProductoAlPedido(chorrillana as Producto)}
+                style={{
+                  backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${getImagenChorrillana(chorrillana.id)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  color: 'white'
+                }}
+              >
+                <h5>{chorrillana.nombre.toUpperCase()}</h5>
+                <div className="size" style={{
+                  backgroundColor: 'rgba(255, 215, 0, 0.9)',
+                  color: '#000',
+                  padding: '3px 6px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '11px',
+                  display: 'inline-block',
+                  textShadow: 'none',
+                  border: '1px solid rgba(0,0,0,0.2)'
+                }}>{chorrillana.tamaño}</div>
+                <div className="price">{formatearPrecio(chorrillana.precio)}</div>
+              </div>
+            ))}
+          </div>
+
           {/* Sección Bebestibles */}
           <div className="section-title">BEBESTIBLES</div>
           <div className="bebestibles-grid">
@@ -1508,18 +1651,20 @@ function App() {
               pedidoActual.map((item) => (
                 <div 
                   key={item.id} 
-                  className={`pedido-item ${item.producto.id.includes('papas_') ? 'clickeable' : ''}`}
+                  className={`pedido-item ${item.producto.id.includes('papas_') || item.producto.id.includes('chorrillana_') ? 'clickeable' : ''}`}
                   onClick={() => handleItemClick(item)}
-                  style={{ cursor: item.producto.id.includes('papas_') ? 'pointer' : 'default' }}
+                  style={{ cursor: item.producto.id.includes('papas_') || item.producto.id.includes('chorrillana_') ? 'pointer' : 'default' }}
                 >
                   <div className="pedido-item-info">
                     <h6>
                       {item.producto.id.includes('papas_') 
                         ? `Papas Fritas ${getTamañoParaPedido(item.producto.tamaño || '')}` 
+                        : item.producto.id.includes('chorrillana_')
+                        ? item.producto.nombre
                         : item.producto.nombre}
                     </h6>
                     <div className="item-details">
-                      {!item.producto.id.includes('papas_') && item.producto.tamaño}
+                      {!item.producto.id.includes('papas_') && !item.producto.id.includes('chorrillana_') && item.producto.tamaño}
                       {item.agregados.length > 0 && (
                                                    <div className="agregados-list">
                             {item.agregados.map((agregado, index) => (
@@ -2125,6 +2270,7 @@ function App() {
         producto={productoParaAgregados}
         onAgregarAgregado={handleAgregarAgregado}
         onDecrementarAgregado={handleDecrementarAgregado}
+        onCambiarTamañoProducto={handleCambiarTamañoProducto}
         agregadosExistentes={itemEditandoId ? pedidoActual.find(item => item.id === itemEditandoId)?.agregados || [] : []}
       />
     </>
