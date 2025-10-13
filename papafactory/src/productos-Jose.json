@@ -7,21 +7,21 @@
           "id": "papas_200g",
           "nombre": "Papas Fritas 200G",
           "tamaño": "200G",
-          "precio": 3000,
+          "precio": 3500,
           "moneda": "CLP"
         },
         {
           "id": "papas_350g",
           "nombre": "Papas Fritas 350G",
           "tamaño": "350G",
-          "precio": 3500,
+          "precio": 4000,
           "moneda": "CLP"
         },
         {
           "id": "papas_500g",
           "nombre": "Papas Fritas 500G",
           "tamaño": "500G",
-          "precio": 4000,
+          "precio": 4500,
           "moneda": "CLP"
         }
       ]
@@ -55,9 +55,9 @@
     "agregados_basicos": {
       "categoria": "Agregados Básicos",
       "precios_por_tamaño": {
-        "200G": 700,
-        "350G": 900,
-        "500G": 1100
+        "200G": 800,
+        "350G": 1000,
+        "500G": 1200
       },
       "items": [
         "Ají verde encurtido",
@@ -75,16 +75,15 @@
     "agregados_premium": {
       "categoria": "Agregados Premium",
       "precios_por_tamaño": {
-        "200G": 1100,
-        "350G": 1300,
-        "500G": 1500
+        "200G": 1200,
+        "350G": 1400,
+        "500G": 1600
       },
       "items": [
         "Carne mechada",
         "Cebolla caramelizada",
         "Champiñones salteados",
         "Choclo con crema",
-        "Pepinillo dulce",
         "Pollo",
         "Pollo teriyaki",
         "Salsa de queso azul",
@@ -162,14 +161,6 @@
           "tamaño": "unidad",
           "precio": 150,
           "moneda": "CLP"
-        },
-        {
-          "id": "pack_delivery",
-          "nombre": "Pack Delivery",
-          "tamaño": "pack",
-          "precio": 500,
-          "moneda": "CLP",
-          "descripcion": "Incluye caja de cartón + bolsa + pocillo"
         }
       ]
     }
