@@ -33,12 +33,12 @@ interface ItemPedido {
 
 const getTamañoNombre = (tamaño: string): string => {
   switch (tamaño) {
-    case '200G':
-      return 'PEQUEÑA';
-    case '350G':
-      return 'MEDIANA';
-    case '500G':
-      return 'GRANDE';
+    case 'M':
+      return 'M';
+    case 'L':
+      return 'L';
+    case 'XL':
+      return 'XL';
     default:
       return '';
   }
@@ -46,12 +46,12 @@ const getTamañoNombre = (tamaño: string): string => {
 
 const getTamañoParaPedido = (tamaño: string): string => {
   switch (tamaño) {
-    case '200G':
-      return 'Pequeña';
-    case '350G':
-      return 'Mediana';
-    case '500G':
-      return 'Grande';
+    case 'M':
+      return 'M';
+    case 'L':
+      return 'L';
+    case 'XL':
+      return 'XL';
     default:
       return '';
   }
@@ -59,12 +59,12 @@ const getTamañoParaPedido = (tamaño: string): string => {
 
 const getTamañoLetra = (tamaño: string): string => {
   switch (tamaño) {
-    case '200G':
-      return 'P';
-    case '350G':
+    case 'M':
       return 'M';
-    case '500G':
-      return 'G';
+    case 'L':
+      return 'L';
+    case 'XL':
+      return 'XL';
     default:
       return '';
   }
@@ -88,8 +88,7 @@ function Modal({
   if (!show || !producto) return null;
 
   const esChorrillana = producto.id.includes('chorrillana_');
-  const esPapa = producto.id.includes('papas_');
-  const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto.tamaño || (esPapa ? '200G' : 'Chica'));
+  const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto.tamaño || 'M');
 
   const formatearPrecio = (precio: number): string => {
     return new Intl.NumberFormat('es-CL', {
@@ -107,26 +106,10 @@ function Modal({
   };
 
   const getPrecioAgregado = (tamaño: string, tipo: 'basico' | 'premium'): number => {
-    // Mapear tamaños de chorrillana a tamaños de papa para precios
-    let tamañoParaPrecio = tamaño;
-    if (esChorrillana) {
-      switch (tamaño) {
-        case 'Chica':
-          tamañoParaPrecio = '200G';
-          break;
-        case 'Mediana':
-          tamañoParaPrecio = '350G';
-          break;
-        case 'Grande':
-          tamañoParaPrecio = '500G';
-          break;
-      }
-    }
-    
     if (tipo === 'basico') {
-      return productos.productos.agregados_basicos.precios_por_tamaño[tamañoParaPrecio as keyof typeof productos.productos.agregados_basicos.precios_por_tamaño];
+      return productos.productos.agregados_basicos.precios_por_tamaño[tamaño as keyof typeof productos.productos.agregados_basicos.precios_por_tamaño];
     } else {
-      return productos.productos.agregados_premium.precios_por_tamaño[tamañoParaPrecio as keyof typeof productos.productos.agregados_premium.precios_por_tamaño];
+      return productos.productos.agregados_premium.precios_por_tamaño[tamaño as keyof typeof productos.productos.agregados_premium.precios_por_tamaño];
     }
   };
 
@@ -145,23 +128,10 @@ function Modal({
   };
 
   const getTamañoNombreModal = (tamaño: string): string => {
-    if (esChorrillana) {
-      switch (tamaño) {
-        case 'Chica':
-          return 'CHICA';
-        case 'Mediana':
-          return 'MEDIANA';
-        case 'Grande':
-          return 'GRANDE';
-        default:
-          return tamaño.toUpperCase();
-      }
-    } else {
-      return getTamañoNombre(tamaño);
-    }
+    return getTamañoNombre(tamaño);
   };
 
-  const gramajes = esChorrillana ? ['Chica', 'Mediana', 'Grande'] : ['200G', '350G', '500G'];
+  const gramajes = ['M', 'L', 'XL'];
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -245,11 +215,11 @@ function App() {
 
   const getImagenFondo = (tamaño: string): string => {
     switch (tamaño) {
-      case '200G':
+      case 'M':
         return 'https://www.lavanguardia.com/files/og_thumbnail/uploads/2020/08/19/5f3d3a3f2bea3.jpeg';
-      case '350G':
+      case 'L':
         return 'https://buendia-pro-app.s3.eu-west-3.amazonaws.com/s3fs-public/styles/highlight_large/public/2020-05/bruselas-guia-comer-dormir-comer-patatas-fritas-cono_0.jpg.webp?VersionId=V3iFMz8GEYQEXbD38DcnP_HYcICagaoO&itok=xGh7mylF';
-      case '500G':
+      case 'XL':
         return 'https://i0.wp.com/foodandpleasure.com/wp-content/uploads/2022/06/papas-fritas-cdmx-frituurmx-1-e1656219926660.jpg?fit=1080%2C901&ssl=1';
       default:
         return '';
@@ -258,11 +228,11 @@ function App() {
 
   const getImagenChorrillana = (id: string): string => {
     switch(id) {
-      case 'chorrillana_chica':
+      case 'chorrillana_m':
         return 'https://i.blogs.es/29d125/chorrillana-650/650_1200.jpg';
-      case 'chorrillana_mediana':
+      case 'chorrillana_l':
         return 'https://curiyorkdelivery.cl/wp-content/uploads/2023/11/YEK01232-scaled.jpg';
-      case 'chorrillana_grande':
+      case 'chorrillana_xl':
         return 'https://tb-static.uber.com/prod/image-proc/processed_images/89fe4947f34e9edeaf3bcb469322020c/58f691da9eaef86b0b51f9b2c483fe63.jpeg';
       default:
         return 'https://i.blogs.es/29d125/chorrillana-650/650_1200.jpg';
@@ -997,7 +967,6 @@ function App() {
                   >
                     <div className="producto-contenido">
                       <h3 className="producto-titulo">{extra.nombre}</h3>
-                      {extra.descripcion && <div className="producto-descripcion">{extra.descripcion}</div>}
                       <div className="producto-precio">{formatearPrecio(extra.precio)}</div>
                     </div>
                   </div>

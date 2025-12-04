@@ -4,23 +4,23 @@
       "categoria": "Papas Fritas",
       "items": [
         {
-          "id": "papas_200g",
-          "nombre": "Papas Fritas 200G",
-          "tamaño": "200G",
+          "id": "papas_m",
+          "nombre": "Papas Fritas M",
+          "tamaño": "M",
           "precio": 3500,
           "moneda": "CLP"
         },
         {
-          "id": "papas_350g",
-          "nombre": "Papas Fritas 350G",
-          "tamaño": "350G",
+          "id": "papas_l",
+          "nombre": "Papas Fritas L",
+          "tamaño": "L",
           "precio": 4000,
           "moneda": "CLP"
         },
         {
-          "id": "papas_500g",
-          "nombre": "Papas Fritas 500G",
-          "tamaño": "500G",
+          "id": "papas_xl",
+          "nombre": "Papas Fritas XL",
+          "tamaño": "XL",
           "precio": 4500,
           "moneda": "CLP"
         }
@@ -30,23 +30,23 @@
       "categoria": "Chorrillanas",
       "items": [
         {
-          "id": "chorrillana_chica",
-          "nombre": "Papa Chorrillana Chica",
-          "tamaño": "Chica",
+          "id": "chorrillana_m",
+          "nombre": "Papa Chorrillana M",
+          "tamaño": "M",
           "precio": 7200,
           "moneda": "CLP"
         },
         {
-          "id": "chorrillana_mediana",
-          "nombre": "Papa Chorrillana Mediana",
-          "tamaño": "Mediana",
+          "id": "chorrillana_l",
+          "nombre": "Papa Chorrillana L",
+          "tamaño": "L",
           "precio": 8500,
           "moneda": "CLP"
         },
         {
-          "id": "chorrillana_grande",
-          "nombre": "Papa Chorrillana Grande",
-          "tamaño": "Grande",
+          "id": "chorrillana_xl",
+          "nombre": "Papa Chorrillana XL",
+          "tamaño": "XL",
           "precio": 9700,
           "moneda": "CLP"
         }
@@ -55,9 +55,9 @@
     "agregados_basicos": {
       "categoria": "Agregados Básicos",
       "precios_por_tamaño": {
-        "200G": 800,
-        "350G": 1000,
-        "500G": 1200
+        "M": 800,
+        "L": 1000,
+        "XL": 1200
       },
       "items": [
         "Ají verde encurtido",
@@ -75,9 +75,9 @@
     "agregados_premium": {
       "categoria": "Agregados Premium",
       "precios_por_tamaño": {
-        "200G": 1200,
-        "350G": 1400,
-        "500G": 1600
+        "M": 1200,
+        "L": 1400,
+        "XL": 1600
       },
       "items": [
         "Carne mechada",

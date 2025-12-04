@@ -7,10 +7,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencias (se instalan con npm install)
+node_modules/
+
+# Builds temporales (se generan con npm run build)
+dist/
+dist-ssr/
 *.local
+
+# Output del instalador final (se genera con npm run build-admin)
+build-output/
+
+# Archivos de cache
+.cache/
+*.tsbuildinfo
 
 # Editor directories and files
 .vscode/*
@@ -23,5 +33,18 @@ dist-ssr
 *.sln
 *.sw?
 
-#builds
-build-output/
+# Sistema operativo
+Thumbs.db
+.DS_Store
+
+# NO IGNORAR estos archivos (importantes para build):
+# - package.json (lista de dependencias)
+# - package-lock.json (versiones exactas)
+# - tsconfig*.json (configuración TypeScript)
+# - vite.config.ts (configuración Vite)
+# - electron-builder.yml (configuración instalador)
+# - build-*.js (scripts de construcción)
+# - electron-*.js / electron-*.cjs (archivos Electron)
+# - src/ (código fuente)
+# - public/ (assets públicos)
+# - index.html (punto de entrada)

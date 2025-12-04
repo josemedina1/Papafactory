@@ -1,54 +1,142 @@
-# React + TypeScript + Vite
+# PapaFactory - Sistema de Punto de Venta
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de punto de venta para PapaFactory construido con React + TypeScript + Electron.
 
-Currently, two official plugins are available:
+## Requisitos Previos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Antes de comenzar, asegúrate de tener instalado:
 
-## Expanding the ESLint configuration
+- **Node.js** versión 18 o superior ([Descargar aquí](https://nodejs.org))
+- **npm** (viene incluido con Node.js)
+- **Git** para clonar el repositorio
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Instalación en un Nuevo Equipo
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+Sigue estos pasos para configurar el proyecto en cualquier computador:
+
+### 1. Clonar el Repositorio
+
+```bash
+git clone [URL_DEL_REPOSITORIO]
+cd Papafactory/papafactory
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Instalar Dependencias
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+npm install
 ```
+
+Este comando instalará automáticamente todas las dependencias necesarias listadas en `package.json`.
+
+### 3. Crear el Instalador .exe
+
+Una vez instaladas las dependencias, puedes generar el instalador con cualquiera de estos comandos:
+
+#### Opción 1: Build Estándar (Recomendado)
+```bash
+npm run build-admin
+```
+
+#### Opción 2: Build Simple (Si hay problemas con la opción 1)
+```bash
+npm run build-simple-exe
+```
+
+El instalador se generará en la carpeta: `build-output/PapaFactory Setup 0.0.0.exe`
+
+## Comandos Disponibles
+
+- `npm run dev` - Inicia el servidor de desarrollo
+- `npm run build` - Compila el proyecto React
+- `npm run build-admin` - Genera el instalador .exe sin firma digital
+- `npm run build-simple-exe` - Genera el instalador .exe (versión simplificada)
+- `npm run electron` - Inicia la aplicación en modo Electron
+
+## Solución de Problemas Comunes
+
+### Error de Permisos en Windows
+
+Si encuentras errores de permisos al ejecutar scripts, abre PowerShell como Administrador y ejecuta:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### Error de Memoria Insuficiente
+
+Si el build falla por memoria insuficiente:
+
+```bash
+# En PowerShell
+$env:NODE_OPTIONS="--max-old-space-size=4096"
+npm run build-admin
+```
+
+### Limpiar Caché y Reinstalar
+
+Si tienes problemas persistentes:
+
+```bash
+rm -rf node_modules package-lock.json dist build-output
+npm install
+npm run build-admin
+```
+
+### Verificar Versión de Node.js
+
+```bash
+node --version
+# Debe ser v18.0.0 o superior
+```
+
+## Estructura del Proyecto
+
+```
+papafactory/
+├── src/                    # Código fuente
+│   ├── App.tsx            # Componente principal
+│   ├── productos.json     # Base de datos de productos
+│   └── ...
+├── public/                # Recursos públicos (iconos, etc.)
+├── dist/                  # Build de desarrollo (generado)
+├── build-output/          # Instalador final (generado)
+├── build-admin.js         # Script para generar instalador
+├── electron-simple.js     # Configuración de Electron
+├── package.json           # Dependencias del proyecto
+└── vite.config.ts         # Configuración de Vite
+
+```
+
+## Archivos Importantes (NO Eliminar)
+
+Estos archivos son esenciales para generar el instalador:
+
+- `package.json` - Lista de dependencias
+- `package-lock.json` - Versiones exactas de paquetes
+- `tsconfig*.json` - Configuración de TypeScript
+- `vite.config.ts` - Configuración de Vite
+- `electron-builder.yml` - Configuración del instalador
+- `build-*.js` - Scripts de construcción
+- `electron-*.js` / `*.cjs` - Archivos de Electron
+- `src/` - Todo el código fuente
+- `public/` - Assets públicos (iconos, etc.)
+
+## Tecnologías Utilizadas
+
+- **React 19** - Framework de interfaz de usuario
+- **TypeScript** - Lenguaje tipado
+- **Vite** - Build tool y servidor de desarrollo
+- **Electron** - Framework para aplicaciones de escritorio
+- **Electron Builder** - Generador de instaladores
+- **Bootstrap 5** - Framework CSS
+
+## Notas de Desarrollo
+
+- Los tamaños de productos ahora usan nomenclatura: M, L, XL
+- El sistema maneja papas fritas, chorrillanas, bebidas y extras
+- Impresión configurada para tickets de 58mm
+
+## Contacto y Soporte
+
+Para problemas o consultas, contactar al equipo de desarrollo.
