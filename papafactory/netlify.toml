@@ -1,0 +1,50 @@
+# Configuración de Netlify para PapaFactory
+
+[build]
+  # Comando para construir el proyecto
+  command = "npm run build"
+  # Directorio donde se generan los archivos estáticos
+  publish = "dist"
+
+# Configuración de redirecciones para SPA (Single Page Application)
+# Esto asegura que todas las rutas redirijan a index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers de seguridad y optimización
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Headers para assets estáticos (caché)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Headers para imágenes
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Variables de entorno (si las necesitas en el futuro)
+# [build.environment]
+#   NODE_VERSION = "18"
+

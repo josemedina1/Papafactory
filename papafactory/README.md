@@ -2,6 +2,21 @@
 
 Sistema de punto de venta para PapaFactory construido con React + TypeScript + Electron.
 
+## 🌐 Despliegue Web
+
+Este proyecto puede desplegarse tanto como:
+- **Aplicación de escritorio** (Electron) - Ver sección "Instalación en un Nuevo Equipo"
+- **Aplicación web** (Netlify) - Ver [DEPLOY_NETLIFY.md](./DEPLOY_NETLIFY.md) para instrucciones completas
+
+### Despliegue Rápido en Netlify
+
+1. Sube tu código a un repositorio Git
+2. Conecta el repositorio con Netlify
+3. Netlify detectará automáticamente la configuración desde `netlify.toml`
+4. ¡Listo! Tu app estará en línea
+
+Para más detalles, consulta [DEPLOY_NETLIFY.md](./DEPLOY_NETLIFY.md)
+
 ## Requisitos Previos
 
 Antes de comenzar, asegúrate de tener instalado:
