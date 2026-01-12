@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
 
 const API_URL = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Productos'
+const API_URL_AGREGADOS = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Agregados'
 
 interface ProductoAPI {
   id: string;
@@ -13,6 +14,15 @@ interface ProductoAPI {
   moneda: string;
   categoria: string;
   imagen_producto?: string;
+}
+
+interface AgregadoAPI {
+  id: string;
+  item: string;
+  categoria: string;
+  precioM: number;
+  precioL: number;
+  precioXL: number;
 }
 
 // Componente Modal para agregados
@@ -33,10 +43,18 @@ function ModalAgregados({
   onCambiarTamañoProducto?: (nuevoTamaño: string) => void;
   agregadosExistentes?: AgregadoEnPedido[];
 }) {
+  const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto?.tamaño || 'M');
+
+  // Actualizar el gramaje seleccionado cuando cambie el producto
+  useEffect(() => {
+    if (producto?.tamaño) {
+      setGramajeSelecionado(producto.tamaño);
+    }
+  }, [producto]);
+
   if (!show || !producto) return null;
 
   const esChorrillana = producto.id.includes('chorrillana_');
-  const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto.tamaño || 'M');
 
   const formatearPrecio = (precio: number): string => {
     return new Intl.NumberFormat('es-CL', {
@@ -47,10 +65,7 @@ function ModalAgregados({
 
   const handleGramajeClick = (gramaje: string) => {
     setGramajeSelecionado(gramaje);
-    // Notificar el cambio de tamaño del producto
-    if (onCambiarTamañoProducto) {
-      onCambiarTamañoProducto(gramaje);
-    }
+    // NO llamar a onCambiarTamañoProducto porque solo queremos cambiar el tamaño de los agregados, no del producto
   };
 
   const handleAgregadoClick = (nombre: string, precio: number, tipo: 'basico' | 'premium') => {
@@ -521,6 +536,248 @@ function ModalProductoCRUD({
   )
 }
 
+// Componente Modal para CRUD de Agregados
+function ModalAgregadoCRUD({
+  show,
+  onClose,
+  agregado,
+  onSave
+}: {
+  show: boolean;
+  onClose: () => void;
+  agregado: AgregadoAPI | null;
+  onSave: (agregado: AgregadoAPI) => Promise<void>;
+}) {
+  const [item, setItem] = useState<string>('')
+  const [categoria, setCategoria] = useState<string>('Agregados Básicos')
+  const [precioM, setPrecioM] = useState<number>(0)
+  const [precioL, setPrecioL] = useState<number>(0)
+  const [precioXL, setPrecioXL] = useState<number>(0)
+  const [error, setError] = useState<string>('')
+  const [guardando, setGuardando] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (agregado) {
+      setItem(agregado.item)
+      setCategoria(agregado.categoria)
+      setPrecioM(agregado.precioM)
+      setPrecioL(agregado.precioL)
+      setPrecioXL(agregado.precioXL)
+    } else {
+      setItem('')
+      setCategoria('Agregados Básicos')
+      setPrecioM(0)
+      setPrecioL(0)
+      setPrecioXL(0)
+    }
+  }, [agregado])
+
+  if (!show) return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setGuardando(true)
+
+    try {
+      const agregadoData: AgregadoAPI = {
+        id: agregado?.id || '',
+        item,
+        categoria,
+        precioM,
+        precioL,
+        precioXL
+      }
+
+      await onSave(agregadoData)
+      onClose()
+    } catch (err) {
+      setError('Error al guardar el agregado')
+      console.error(err)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>{agregado ? 'Editar Agregado' : 'Nuevo Agregado'}</h2>
+          <button className="btn-cerrar" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <div style={{
+                backgroundColor: '#f8d7da',
+                color: '#721c24',
+                padding: '10px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '1px solid #f5c6cb'
+              }}>
+                {error}
+              </div>
+            )}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Nombre del Agregado *
+              </label>
+              <input
+                type="text"
+                value={item}
+                onChange={(e) => setItem(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese el nombre del agregado"
+                required
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Categoría *
+              </label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#fff',
+                  cursor: 'pointer'
+                }}
+                required
+              >
+                <option value="Agregados Básicos">Agregados Básicos</option>
+                <option value="Agregados Premium">Agregados Premium</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Precio M *
+              </label>
+              <input
+                type="number"
+                value={precioM}
+                onChange={(e) => setPrecioM(parseFloat(e.target.value) || 0)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese el precio para tamaño M"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Precio L *
+              </label>
+              <input
+                type="number"
+                value={precioL}
+                onChange={(e) => setPrecioL(parseFloat(e.target.value) || 0)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese el precio para tamaño L"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Precio XL *
+              </label>
+              <input
+                type="number"
+                value={precioXL}
+                onChange={(e) => setPrecioXL(parseFloat(e.target.value) || 0)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese el precio para tamaño XL"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: '10px 20px',
+                  border: '2px solid #ddd',
+                  borderRadius: '8px',
+                  backgroundColor: '#f5f5f5',
+                  color: '#333',
+                  cursor: guardando ? 'not-allowed' : 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }}
+                disabled={guardando}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  backgroundColor: '#FFD700',
+                  color: '#000',
+                  cursor: guardando ? 'not-allowed' : 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  opacity: guardando ? 0.6 : 1
+                }}
+                disabled={guardando}
+              >
+                {guardando ? 'Guardando...' : (agregado ? 'Actualizar' : 'Crear')}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Componente Modal para Login
 function ModalLogin({ 
   show, 
@@ -734,6 +991,12 @@ function App() {
   const [productoEditando, setProductoEditando] = useState<Producto | null>(null)
   const [productoCompletoEditando, setProductoCompletoEditando] = useState<ProductoAPI | null>(null)
   const [pestañaActiva, setPestañaActiva] = useState<'productos' | 'agregados'>('productos')
+  
+  // Estados para agregados desde la API
+  const [agregadosAPI, setAgregadosAPI] = useState<AgregadoAPI[]>([])
+  const [cargandoAgregados, setCargandoAgregados] = useState<boolean>(true)
+  const [mostrarModalAgregado, setMostrarModalAgregado] = useState<boolean>(false)
+  const [agregadoEditando, setAgregadoEditando] = useState<AgregadoAPI | null>(null)
 
   // Función para obtener productos de la API
   const cargarProductosDesdeAPI = async () => {
@@ -845,6 +1108,24 @@ function App() {
     }
   }
 
+  // Función para obtener agregados de la API
+  const cargarAgregadosDesdeAPI = async () => {
+    try {
+      setCargandoAgregados(true)
+      const response = await fetch(API_URL_AGREGADOS)
+      if (!response.ok) {
+        throw new Error('Error al cargar agregados desde la API')
+      }
+      const agregados: AgregadoAPI[] = await response.json()
+      setAgregadosAPI(agregados)
+    } catch (error) {
+      console.error('Error al cargar agregados desde la API:', error)
+      setAgregadosAPI([])
+    } finally {
+      setCargandoAgregados(false)
+    }
+  }
+
   // Cargar el estado de autenticación desde localStorage al iniciar
   useEffect(() => {
     const sesionGuardada = localStorage.getItem('usuarioAutenticadoPapaFactory')
@@ -853,6 +1134,7 @@ function App() {
     }
     cargarHistorialPedidos()
     cargarProductosDesdeAPI()
+    cargarAgregadosDesdeAPI()
   }, [])
 
   // Función para iniciar sesión
@@ -955,7 +1237,77 @@ function App() {
     }
   }
 
+  // Funciones CRUD para Agregados
+  const handleCrearAgregado = () => {
+    setAgregadoEditando(null)
+    setMostrarModalAgregado(true)
+  }
 
+  const handleEditarAgregado = (agregado: AgregadoAPI) => {
+    setAgregadoEditando(agregado)
+    setMostrarModalAgregado(true)
+  }
+
+  const handleEliminarAgregado = async (id: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este agregado?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_URL_AGREGADOS}/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el agregado')
+      }
+
+      // Recargar agregados
+      await cargarAgregadosDesdeAPI()
+    } catch (error) {
+      console.error('Error al eliminar agregado:', error)
+      alert('Error al eliminar el agregado')
+    }
+  }
+
+  const handleGuardarAgregado = async (agregadoData: AgregadoAPI) => {
+    try {
+      if (agregadoData.id && agregadoEditando) {
+        // Actualizar agregado existente
+        const response = await fetch(`${API_URL_AGREGADOS}/${agregadoData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(agregadoData)
+        })
+
+        if (!response.ok) {
+          throw new Error('Error al actualizar el agregado')
+        }
+      } else {
+        // Crear nuevo agregado
+        const { id, ...agregadoSinId } = agregadoData
+        const response = await fetch(API_URL_AGREGADOS, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(agregadoSinId)
+        })
+
+        if (!response.ok) {
+          throw new Error('Error al crear el agregado')
+        }
+      }
+
+      // Recargar agregados
+      await cargarAgregadosDesdeAPI()
+    } catch (error) {
+      console.error('Error al guardar agregado:', error)
+      throw error
+    }
+  }
 
   const cargarHistorialPedidos = async () => {
     try {
@@ -1242,12 +1594,23 @@ function App() {
   }
 
   const agregarProductoAlPedido = (producto: Producto) => {
+    // Detectar si es papa frita o chorrillana
+    // Verificar primero por ID (para compatibilidad con datos locales)
+    const esPapaFritaPorId = producto.id.includes('papas_') || 
+                              (producto.id.toLowerCase().includes('papa') && !producto.id.toLowerCase().includes('chorrillana'))
+    const esChorrillanaPorId = producto.id.includes('chorrillana_') || 
+                                producto.id.toLowerCase().includes('chorrillana')
+    
+    // Verificar si está en los arrays de productos cargados desde la API
+    const esPapaFrita = esPapaFritaPorId || papasFritas.some(p => p.id === producto.id)
+    const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === producto.id)
+    
     // Si es una papa frita o chorrillana, abrir modal de agregados
-    if (producto.id.includes('papas_') || producto.id.includes('chorrillana_')) {
+    if (esPapaFrita || esChorrillana) {
       // Crear el item inmediatamente en el pedido
       const nuevoItem: ItemPedido = {
         id: `${producto.id}-${Date.now()}`,
-        tipo: producto.id.includes('papas_') ? 'papa' : 'chorrillana',
+        tipo: esPapaFrita ? 'papa' : 'chorrillana',
         producto: producto,
         agregados: [],
         cantidad: 1,
@@ -1320,8 +1683,24 @@ function App() {
   }
 
   const handleItemClick = (item: ItemPedido) => {
-    // Mostrar modal para papas fritas y chorrillanas
-    if (item.producto.id.includes('papas_') || item.producto.id.includes('chorrillana_')) {
+    // Detectar si es papa frita o chorrillana para poder editar agregados
+    // Verificar por ID (compatibilidad con datos locales)
+    const esPapaFritaPorId = item.producto.id.includes('papas_') || 
+                              (item.producto.id.toLowerCase().includes('papa') && !item.producto.id.toLowerCase().includes('chorrillana'))
+    const esChorrillanaPorId = item.producto.id.includes('chorrillana_') || 
+                                item.producto.id.toLowerCase().includes('chorrillana')
+    
+    // Verificar por arrays de productos de la API
+    const esPapaFrita = esPapaFritaPorId || papasFritas.some(p => p.id === item.producto.id)
+    const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === item.producto.id)
+    
+    // Verificar por categoría (para productos de la API)
+    const categoria = (item.producto as any).categoria?.toLowerCase() || ''
+    const esPapaFritaPorCategoria = categoria.includes('papa') && !categoria.includes('chorrillana')
+    const esChorrillanaPorCategoria = categoria.includes('chorrillana')
+    
+    // Mostrar modal para papas fritas y chorrillanas (para editar agregados)
+    if (esPapaFrita || esChorrillana || esPapaFritaPorCategoria || esChorrillanaPorCategoria) {
       setProductoParaAgregados(item.producto)
       setItemEditandoId(item.id)
       setShowModalAgregados(true)
@@ -2256,77 +2635,121 @@ function App() {
             <div className="gestor-agregados">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 className="gestor-section-title" style={{ marginBottom: 0 }}>Gestor de Agregados</h3>
+                <button
+                  className="btn-crear-producto"
+                  onClick={handleCrearAgregado}
+                >
+                  + Nuevo Agregado
+                </button>
               </div>
 
-              {/* Agregados Básicos */}
-              <div className="agregados-section-gestor">
-                <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
-                  Agregados Básicos
-                </h4>
-                <div className="agregados-grid-gestor">
-                  {productos.productos.agregados_basicos.items.map((agregado, index) => (
-                    <div key={`basico-${index}`} className="agregado-card-gestor">
-                      <div className="agregado-header-gestor">
-                        <h5 className="agregado-nombre-gestor">{agregado}</h5>
-                      </div>
-                      <div className="agregado-info-gestor">
-                        <div className="agregado-detail">
-                          <span className="detail-label">Precios por Tamaño:</span>
+              {cargandoAgregados ? (
+                <div className="gestor-loading">Cargando agregados...</div>
+              ) : (
+                <>
+                  {/* Agregados Básicos */}
+                  <div className="agregados-section-gestor">
+                    <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
+                      Agregados Básicos ({agregadosAPI.filter(a => a.categoria === 'Agregados Básicos').length})
+                    </h4>
+                    <div className="agregados-grid-gestor">
+                      {agregadosAPI.filter(a => a.categoria === 'Agregados Básicos').map((agregado) => (
+                        <div key={agregado.id} className="agregado-card-gestor">
+                          <div className="agregado-header-gestor">
+                            <h5 className="agregado-nombre-gestor">{agregado.item}</h5>
+                          </div>
+                          <div className="agregado-info-gestor">
+                            <div className="agregado-detail">
+                              <span className="detail-label">Precios por Tamaño:</span>
+                            </div>
+                            <div className="agregado-precios">
+                              <div className="precio-item">
+                                <span className="precio-label">M:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioM)}</span>
+                              </div>
+                              <div className="precio-item">
+                                <span className="precio-label">L:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioL)}</span>
+                              </div>
+                              <div className="precio-item">
+                                <span className="precio-label">XL:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioXL)}</span>
+                              </div>
+                            </div>
+                            <div className="producto-actions" style={{ marginTop: '15px' }}>
+                              <button
+                                className="btn-editar"
+                                onClick={() => handleEditarAgregado(agregado)}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                className="btn-eliminar"
+                                onClick={() => handleEliminarAgregado(agregado.id)}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="agregado-precios">
-                          <div className="precio-item">
-                            <span className="precio-label">M:</span>
-                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_basicos.precios_por_tamaño.M)}</span>
-                          </div>
-                          <div className="precio-item">
-                            <span className="precio-label">L:</span>
-                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_basicos.precios_por_tamaño.L)}</span>
-                          </div>
-                          <div className="precio-item">
-                            <span className="precio-label">XL:</span>
-                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_basicos.precios_por_tamaño.XL)}</span>
-                          </div>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              {/* Agregados Premium */}
-              <div className="agregados-section-gestor" style={{ marginTop: '30px' }}>
-                <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
-                  Agregados Premium
-                </h4>
-                <div className="agregados-grid-gestor">
-                  {productos.productos.agregados_premium.items.map((agregado, index) => (
-                    <div key={`premium-${index}`} className="agregado-card-gestor">
-                      <div className="agregado-header-gestor">
-                        <h5 className="agregado-nombre-gestor">{agregado}</h5>
-                      </div>
-                      <div className="agregado-info-gestor">
-                        <div className="agregado-detail">
-                          <span className="detail-label">Precios por Tamaño:</span>
+                  {/* Agregados Premium */}
+                  <div className="agregados-section-gestor" style={{ marginTop: '30px' }}>
+                    <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
+                      Agregados Premium ({agregadosAPI.filter(a => a.categoria === 'Agregados Premium').length})
+                    </h4>
+                    <div className="agregados-grid-gestor">
+                      {agregadosAPI.filter(a => a.categoria === 'Agregados Premium').map((agregado) => (
+                        <div key={agregado.id} className="agregado-card-gestor">
+                          <div className="agregado-header-gestor">
+                            <h5 className="agregado-nombre-gestor">{agregado.item}</h5>
+                          </div>
+                          <div className="agregado-info-gestor">
+                            <div className="agregado-detail">
+                              <span className="detail-label">Precios por Tamaño:</span>
+                            </div>
+                            <div className="agregado-precios">
+                              <div className="precio-item">
+                                <span className="precio-label">M:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioM)}</span>
+                              </div>
+                              <div className="precio-item">
+                                <span className="precio-label">L:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioL)}</span>
+                              </div>
+                              <div className="precio-item">
+                                <span className="precio-label">XL:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioXL)}</span>
+                              </div>
+                            </div>
+                            <div className="producto-actions" style={{ marginTop: '15px' }}>
+                              <button
+                                className="btn-editar"
+                                onClick={() => handleEditarAgregado(agregado)}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                className="btn-eliminar"
+                                onClick={() => handleEliminarAgregado(agregado.id)}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="agregado-precios">
-                          <div className="precio-item">
-                            <span className="precio-label">M:</span>
-                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_premium.precios_por_tamaño.M)}</span>
-                          </div>
-                          <div className="precio-item">
-                            <span className="precio-label">L:</span>
-                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_premium.precios_por_tamaño.L)}</span>
-                          </div>
-                          <div className="precio-item">
-                            <span className="precio-label">XL:</span>
-                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_premium.precios_por_tamaño.XL)}</span>
-                          </div>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+
+                  {agregadosAPI.length === 0 && (
+                    <div className="gestor-empty">No hay agregados cargados desde la API</div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>
@@ -2343,6 +2766,17 @@ function App() {
         producto={productoEditando}
         productoCompleto={productoCompletoEditando}
         onSave={handleGuardarProducto}
+      />
+
+      {/* Modal de CRUD de Agregados */}
+      <ModalAgregadoCRUD
+        show={mostrarModalAgregado}
+        onClose={() => {
+          setMostrarModalAgregado(false)
+          setAgregadoEditando(null)
+        }}
+        agregado={agregadoEditando}
+        onSave={handleGuardarAgregado}
       />
       </>
     );
@@ -2394,34 +2828,34 @@ function App() {
             ) : (
               papasFritas.length > 0 ? (
                 papasFritas.map((papa) => (
-                  <div 
-                    key={papa.id} 
-                    className="papa-card"
-                    onClick={() => agregarProductoAlPedido(papa as Producto)}
-                    style={{
+              <div 
+                key={papa.id} 
+                className="papa-card"
+                onClick={() => agregarProductoAlPedido(papa as Producto)}
+                style={{
                       backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${papa.descripcion || getImagenPapa(papa.tamaño)})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                       color: 'white',
                       position: 'relative'
-                    }}
-                  >
+                }}
+              >
                     <h5>PAPAS FRITAS {getTamañoParaPedido(papa.tamaño || '')}</h5>
-                    <div className="size" style={{
+                <div className="size" style={{
                       backgroundColor: '#FFD700',
-                      color: '#000',
+                  color: '#000',
                       padding: '8px 16px',
-                      borderRadius: '8px',
-                      fontWeight: 'bold',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
                       fontSize: '16px',
-                      display: 'inline-block',
+                  display: 'inline-block',
                       margin: '8px auto',
-                      textShadow: 'none',
+                  textShadow: 'none',
                       border: 'none',
                       minWidth: '50px'
-                    }}>{getTamañoParaPedido(papa.tamaño || '')}</div>
-                    <div className="price">{formatearPrecio(papa.precio)}</div>
-                  </div>
+                }}>{getTamañoParaPedido(papa.tamaño || '')}</div>
+                <div className="price">{formatearPrecio(papa.precio)}</div>
+              </div>
                 ))
               ) : (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
@@ -2436,11 +2870,11 @@ function App() {
           <div className="papas-grid">
             {chorrillanas.length > 0 ? (
               chorrillanas.map((chorrillana) => (
-                <div 
-                  key={chorrillana.id} 
-                  className="papa-card"
-                  onClick={() => agregarProductoAlPedido(chorrillana as Producto)}
-                  style={{
+              <div 
+                key={chorrillana.id} 
+                className="papa-card"
+                onClick={() => agregarProductoAlPedido(chorrillana as Producto)}
+                style={{
                     backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${chorrillana.descripcion || getImagenChorrillana(chorrillana.id)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -2502,20 +2936,20 @@ function App() {
           <div className="extras-grid">
             {extras.length > 0 ? (
               extras.map((extra) => (
-                <div 
-                  key={extra.id} 
-                  className="extra-card"
-                  onClick={() => agregarProductoAlPedido(extra as Producto)}
-                  style={{
+              <div 
+                key={extra.id} 
+                className="extra-card"
+                onClick={() => agregarProductoAlPedido(extra as Producto)}
+                style={{
                     backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url(${extra.descripcion || getImagenExtra(extra.id)})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    color: 'white'
-                  }}
-                >
-                  <h6>{extra.nombre}</h6>
-                  <div className="price">{formatearPrecio(extra.precio)}</div>
-                </div>
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  color: 'white'
+                }}
+              >
+                <h6>{extra.nombre}</h6>
+                <div className="price">{formatearPrecio(extra.precio)}</div>
+              </div>
               ))
             ) : (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
@@ -2537,23 +2971,40 @@ function App() {
                 <p>No hay productos en el pedido</p>
               </div>
             ) : (
-              pedidoActual.map((item) => (
+              pedidoActual.map((item) => {
+                // Detectar si es papa frita o chorrillana
+                const esPapaFritaPorId = item.producto.id.includes('papas_') || 
+                                          (item.producto.id.toLowerCase().includes('papa') && !item.producto.id.toLowerCase().includes('chorrillana'))
+                const esChorrillanaPorId = item.producto.id.includes('chorrillana_') || 
+                                            item.producto.id.toLowerCase().includes('chorrillana')
+                
+                const esPapaFrita = esPapaFritaPorId || papasFritas.some(p => p.id === item.producto.id)
+                const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === item.producto.id)
+                
+                // Verificar por categoría (para productos de la API)
+                const categoria = (item.producto as any).categoria?.toLowerCase() || ''
+                const esPapaFritaPorCategoria = categoria.includes('papa') && !categoria.includes('chorrillana')
+                const esChorrillanaPorCategoria = categoria.includes('chorrillana')
+                
+                const esEditable = esPapaFrita || esChorrillana || esPapaFritaPorCategoria || esChorrillanaPorCategoria
+                
+                return (
                 <div 
                   key={item.id} 
-                  className={`pedido-item ${item.producto.id.includes('papas_') || item.producto.id.includes('chorrillana_') ? 'clickeable' : ''}`}
+                  className={`pedido-item ${esEditable ? 'clickeable' : ''}`}
                   onClick={() => handleItemClick(item)}
-                  style={{ cursor: item.producto.id.includes('papas_') || item.producto.id.includes('chorrillana_') ? 'pointer' : 'default' }}
+                  style={{ cursor: esEditable ? 'pointer' : 'default' }}
                 >
                   <div className="pedido-item-info">
                     <h6>
-                      {item.producto.id.includes('papas_') 
+                      {esPapaFrita
                         ? `Papas Fritas ${getTamañoParaPedido(item.producto.tamaño || '')}` 
-                        : item.producto.id.includes('chorrillana_')
+                        : esChorrillana
                         ? item.producto.nombre
                         : item.producto.nombre}
                     </h6>
                     <div className="item-details">
-                      {!item.producto.id.includes('papas_') && !item.producto.id.includes('chorrillana_') && item.producto.tamaño}
+                      {!esPapaFrita && !esChorrillana && item.producto.tamaño}
                       {item.agregados.length > 0 && (
                                                    <div className="agregados-list">
                             {item.agregados.map((agregado, index) => (
@@ -2578,7 +3029,8 @@ function App() {
                     ×
                   </button>
                 </div>
-              ))
+                )
+              })
             )}
           </div>
 
@@ -3181,6 +3633,17 @@ function App() {
         producto={productoEditando}
         productoCompleto={productoCompletoEditando}
         onSave={handleGuardarProducto}
+      />
+
+      {/* Modal de CRUD de Agregados */}
+      <ModalAgregadoCRUD
+        show={mostrarModalAgregado}
+        onClose={() => {
+          setMostrarModalAgregado(false)
+          setAgregadoEditando(null)
+        }}
+        agregado={agregadoEditando}
+        onSave={handleGuardarAgregado}
       />
     </>
   )
