@@ -3,6 +3,18 @@ import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
 
+const API_URL = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Productos'
+
+interface ProductoAPI {
+  id: string;
+  nombre: string;
+  tamano: string;
+  precio: number;
+  moneda: string;
+  categoria: string;
+  imagen_producto?: string;
+}
+
 // Componente Modal para agregados
 function ModalAgregados({ 
   show, 
@@ -211,6 +223,442 @@ function ModalAgregados({
   );
 }
 
+// Componente Modal para CRUD de Productos
+function ModalProductoCRUD({
+  show,
+  onClose,
+  producto,
+  productoCompleto,
+  onSave
+}: {
+  show: boolean;
+  onClose: () => void;
+  producto: Producto | null;
+  productoCompleto?: ProductoAPI | null;
+  onSave: (producto: ProductoAPI) => Promise<void>;
+}) {
+  const [nombre, setNombre] = useState<string>('')
+  const [tamano, setTamano] = useState<string>('')
+  const [precio, setPrecio] = useState<number>(0)
+  const [moneda, setMoneda] = useState<string>('CLP')
+  const [categoria, setCategoria] = useState<string>('')
+  const [imagen_producto, setImagen_producto] = useState<string>('')
+  const [error, setError] = useState<string>('')
+  const [guardando, setGuardando] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (productoCompleto) {
+      // Si tenemos el producto completo desde la API, usar esos datos
+      setNombre(productoCompleto.nombre)
+      setTamano(productoCompleto.tamano)
+      setPrecio(productoCompleto.precio)
+      setMoneda(productoCompleto.moneda)
+      // Normalizar la categoría para que coincida con las opciones del select
+      const catNormalizada = normalizarCategoria(productoCompleto.categoria)
+      setCategoria(catNormalizada)
+      setImagen_producto(productoCompleto.imagen_producto || '')
+    } else if (producto) {
+      // Si solo tenemos el producto básico, usar esos datos
+      setNombre(producto.nombre)
+      setTamano(producto.tamaño)
+      setPrecio(producto.precio)
+      setMoneda(producto.moneda)
+      setCategoria('')
+      setImagen_producto(producto.descripcion || '')
+    } else {
+      // Si no hay producto, limpiar el formulario
+      setNombre('')
+      setTamano('')
+      setPrecio(0)
+      setMoneda('CLP')
+      setCategoria('')
+      setImagen_producto('')
+    }
+  }, [producto, productoCompleto])
+
+  // Función para normalizar la categoría de la API a las opciones del select
+  const normalizarCategoria = (cat: string): string => {
+    if (!cat) return ''
+    const catLower = cat.toLowerCase()
+    if (catLower.includes('papa') && !catLower.includes('chorrillana')) {
+      return 'Papas Fritas'
+    }
+    if (catLower.includes('chorrillana')) {
+      return 'Chorrillanas'
+    }
+    if (catLower.includes('bebida') || catLower.includes('bebestible')) {
+      return 'Bebestibles'
+    }
+    if (catLower.includes('extra')) {
+      return 'Extras'
+    }
+    return cat // Si no coincide, devolver la original
+  }
+
+  if (!show) return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setGuardando(true)
+
+    try {
+      const productoData: ProductoAPI = {
+        id: productoCompleto?.id || producto?.id || '',
+        nombre,
+        tamano,
+        precio,
+        moneda: 'CLP', // Siempre CLP
+        categoria: categoria || 'Papas Fritas', // Usar la categoría seleccionada o Papas Fritas por defecto
+        imagen_producto: imagen_producto || undefined
+      }
+
+      await onSave(productoData)
+      onClose()
+    } catch (err) {
+      setError('Error al guardar el producto')
+      console.error(err)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>{producto ? 'Editar Producto' : 'Nuevo Producto'}</h2>
+          <button className="btn-cerrar" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <div style={{
+                backgroundColor: '#f8d7da',
+                color: '#721c24',
+                padding: '10px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '1px solid #f5c6cb'
+              }}>
+                {error}
+              </div>
+            )}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Nombre *
+              </label>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese el nombre del producto"
+                required
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Tamaño *
+              </label>
+              <input
+                type="text"
+                value={tamano}
+                onChange={(e) => setTamano(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese el tamaño"
+                required
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Precio *
+              </label>
+              <input
+                type="number"
+                value={precio}
+                onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese el precio"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Moneda *
+              </label>
+              <input
+                type="text"
+                value="CLP"
+                readOnly
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#f5f5f5',
+                  cursor: 'not-allowed'
+                }}
+                placeholder="CLP"
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Categoría *
+              </label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#fff',
+                  cursor: 'pointer'
+                }}
+                required
+              >
+                <option value="">Seleccione una categoría</option>
+                <option value="Papas Fritas">Papas Fritas</option>
+                <option value="Chorrillanas">Chorrillanas</option>
+                <option value="Bebestibles">Bebestibles</option>
+                <option value="Extras">Extras</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                URL de Imagen
+              </label>
+              <input
+                type="url"
+                value={imagen_producto}
+                onChange={(e) => setImagen_producto(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese la URL de la imagen"
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: '10px 20px',
+                  border: '2px solid #ddd',
+                  borderRadius: '8px',
+                  backgroundColor: '#f5f5f5',
+                  color: '#333',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }}
+                disabled={guardando}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  backgroundColor: '#FFD700',
+                  color: '#000',
+                  cursor: guardando ? 'not-allowed' : 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  opacity: guardando ? 0.6 : 1
+                }}
+                disabled={guardando}
+              >
+                {guardando ? 'Guardando...' : (producto ? 'Actualizar' : 'Crear')}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Componente Modal para Login
+function ModalLogin({ 
+  show, 
+  onClose,
+  onLoginSuccess
+}: { 
+  show: boolean; 
+  onClose: () => void;
+  onLoginSuccess: () => void;
+}) {
+  const [usuario, setUsuario] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  if (!show) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    // Validar credenciales
+    if (usuario === 'omar.araneda@usach.cl' && password === 'Papafactory') {
+      onLoginSuccess();
+      onClose();
+      setUsuario('');
+      setPassword('');
+    } else {
+      setError('Usuario o contraseña incorrectos');
+    }
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>Iniciar Sesión</h2>
+          <button className="btn-cerrar" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <div style={{
+                backgroundColor: '#f8d7da',
+                color: '#721c24',
+                padding: '10px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '1px solid #f5c6cb'
+              }}>
+                {error}
+              </div>
+            )}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Usuario
+              </label>
+              <input
+                type="text"
+                value={usuario}
+                onChange={(e) => setUsuario(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese su usuario"
+                required
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Ingrese su contraseña"
+                required
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: '10px 20px',
+                  border: '2px solid #ddd',
+                  borderRadius: '8px',
+                  backgroundColor: '#f5f5f5',
+                  color: '#333',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  backgroundColor: '#FFD700',
+                  color: '#000',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }}
+              >
+                Iniciar Sesión
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface PedidoGuardado {
   numeroOrden: string;
   fecha: string;
@@ -271,11 +719,241 @@ function App() {
   const [productoParaAgregados, setProductoParaAgregados] = useState<Producto | null>(null)
   const [itemEditandoId, setItemEditandoId] = useState<string | null>(null)
   const [mostrarModalAgregadosIndependientes, setMostrarModalAgregadosIndependientes] = useState<boolean>(false)
+  const [mostrarModalLogin, setMostrarModalLogin] = useState<boolean>(false)
+  const [usuarioAutenticado, setUsuarioAutenticado] = useState<boolean>(false)
+  const [mostrarGestor, setMostrarGestor] = useState<boolean>(false)
 
-  // Cargar el último número de orden al iniciar la aplicación
+  // Estados para productos desde la API
+  const [papasFritas, setPapasFritas] = useState<Producto[]>([])
+  const [chorrillanas, setChorrillanas] = useState<Producto[]>([])
+  const [bebidas, setBebidas] = useState<Producto[]>([])
+  const [extras, setExtras] = useState<Producto[]>([])
+  const [todosLosProductosAPI, setTodosLosProductosAPI] = useState<Producto[]>([])
+  const [cargandoProductos, setCargandoProductos] = useState<boolean>(true)
+  const [mostrarModalProducto, setMostrarModalProducto] = useState<boolean>(false)
+  const [productoEditando, setProductoEditando] = useState<Producto | null>(null)
+  const [productoCompletoEditando, setProductoCompletoEditando] = useState<ProductoAPI | null>(null)
+  const [pestañaActiva, setPestañaActiva] = useState<'productos' | 'agregados'>('productos')
+
+  // Función para obtener productos de la API
+  const cargarProductosDesdeAPI = async () => {
+    try {
+      setCargandoProductos(true)
+      const response = await fetch(API_URL)
+      if (!response.ok) {
+        throw new Error('Error al cargar productos desde la API')
+      }
+      const productosAPI: ProductoAPI[] = await response.json()
+
+      // Convertir todos los productos al formato interno (tamano -> tamaño)
+      const productosConvertidos: Producto[] = productosAPI.map(p => ({
+        id: p.id,
+        nombre: p.nombre,
+        tamaño: p.tamano,
+        precio: p.precio,
+        moneda: p.moneda,
+        descripcion: p.imagen_producto
+      }))
+
+      // Guardar todos los productos de la API (sin filtrar)
+      setTodosLosProductosAPI(productosConvertidos)
+
+      // Filtrar por categoría para uso en la página principal
+      // Primero intentar filtrar por categoría exacta, si no hay resultados, mostrar todos
+      const papasFiltradas = productosAPI
+        .filter(p => {
+          const cat = p.categoria?.toLowerCase() || ''
+          return cat.includes('papa') && !cat.includes('chorrillana') || 
+                 p.categoria === 'Papas Fritas' || 
+                 p.categoria === 'papas fritas'
+        })
+        .map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          tamaño: p.tamano,
+          precio: p.precio,
+          moneda: p.moneda,
+          descripcion: p.imagen_producto
+        }))
+      
+      const chorrillanasFiltradas = productosAPI
+        .filter(p => {
+          const cat = p.categoria?.toLowerCase() || ''
+          return cat.includes('chorrillana') || p.categoria === 'Chorrillanas'
+        })
+        .map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          tamaño: p.tamano,
+          precio: p.precio,
+          moneda: p.moneda,
+          descripcion: p.imagen_producto
+        }))
+      
+      const bebidasFiltradas = productosAPI
+        .filter(p => {
+          const cat = p.categoria?.toLowerCase() || ''
+          return cat.includes('bebida') || cat.includes('bebestible') || 
+                 p.categoria === 'Bebestibles' || p.categoria === 'Bebidas'
+        })
+        .map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          tamaño: p.tamano,
+          precio: p.precio,
+          moneda: p.moneda,
+          descripcion: p.imagen_producto
+        }))
+      
+      const extrasFiltradas = productosAPI
+        .filter(p => {
+          const cat = p.categoria?.toLowerCase() || ''
+          return cat.includes('extra') || p.categoria === 'Extras'
+        })
+        .map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          tamaño: p.tamano,
+          precio: p.precio,
+          moneda: p.moneda,
+          descripcion: p.imagen_producto
+        }))
+      
+      // Si no hay productos filtrados, mostrar todos los productos en papas fritas como fallback
+      if (papasFiltradas.length === 0 && chorrillanasFiltradas.length === 0 && 
+          bebidasFiltradas.length === 0 && extrasFiltradas.length === 0) {
+        // Si no hay productos que coincidan, mostrar todos en papas fritas para que se vean
+        setPapasFritas(productosConvertidos)
+        setChorrillanas([])
+        setBebidas([])
+        setExtras([])
+      } else {
+        setPapasFritas(papasFiltradas)
+        setChorrillanas(chorrillanasFiltradas)
+        setBebidas(bebidasFiltradas)
+        setExtras(extrasFiltradas)
+      }
+    } catch (error) {
+      console.error('Error al cargar productos desde la API:', error)
+      // En caso de error, usar datos locales como fallback
+      setPapasFritas(productos.productos.papas_fritas.items as Producto[])
+      setChorrillanas(productos.productos.chorrillanas.items as Producto[])
+      setBebidas(productos.productos.bebidas.items as Producto[])
+      setExtras(productos.productos.extras.items as Producto[])
+    } finally {
+      setCargandoProductos(false)
+    }
+  }
+
+  // Cargar el estado de autenticación desde localStorage al iniciar
   useEffect(() => {
+    const sesionGuardada = localStorage.getItem('usuarioAutenticadoPapaFactory')
+    if (sesionGuardada === 'true') {
+      setUsuarioAutenticado(true)
+    }
     cargarHistorialPedidos()
+    cargarProductosDesdeAPI()
   }, [])
+
+  // Función para iniciar sesión
+  const handleLoginSuccess = () => {
+    setUsuarioAutenticado(true)
+    localStorage.setItem('usuarioAutenticadoPapaFactory', 'true')
+  }
+
+  // Función para cerrar sesión
+  const handleCerrarSesion = () => {
+    setUsuarioAutenticado(false)
+    setMostrarGestor(false)
+    localStorage.removeItem('usuarioAutenticadoPapaFactory')
+  }
+
+  // Funciones CRUD para productos
+  const handleCrearProducto = () => {
+    setProductoEditando(null)
+    setMostrarModalProducto(true)
+  }
+
+  const handleEditarProducto = async (producto: Producto) => {
+    setProductoEditando(producto)
+    setMostrarModalProducto(true)
+    
+    // Obtener el producto completo desde la API para tener todos los datos (incluyendo categoría)
+    try {
+      const response = await fetch(`${API_URL}/${producto.id}`)
+      if (response.ok) {
+        const productoCompleto: ProductoAPI = await response.json()
+        setProductoCompletoEditando(productoCompleto)
+      } else {
+        // Si falla, usar el producto básico
+        setProductoCompletoEditando(null)
+      }
+    } catch (error) {
+      console.error('Error al cargar producto completo:', error)
+      setProductoCompletoEditando(null)
+    }
+  }
+
+  const handleEliminarProducto = async (id: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el producto')
+      }
+
+      // Recargar productos
+      await cargarProductosDesdeAPI()
+    } catch (error) {
+      console.error('Error al eliminar producto:', error)
+      alert('Error al eliminar el producto')
+    }
+  }
+
+  const handleGuardarProducto = async (productoData: ProductoAPI) => {
+    try {
+      if (productoData.id && productoEditando) {
+        // Actualizar producto existente
+        const response = await fetch(`${API_URL}/${productoData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(productoData)
+        })
+
+        if (!response.ok) {
+          throw new Error('Error al actualizar el producto')
+        }
+      } else {
+        // Crear nuevo producto
+        const { id, ...productoSinId } = productoData
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(productoSinId)
+        })
+
+        if (!response.ok) {
+          throw new Error('Error al crear el producto')
+        }
+      }
+
+      // Recargar productos
+      await cargarProductosDesdeAPI()
+    } catch (error) {
+      console.error('Error al guardar producto:', error)
+      throw error
+    }
+  }
 
 
 
@@ -408,7 +1086,7 @@ function App() {
     setTamañoSeleccionado(tamaño)
     
     // Mostrar la papa del tamaño seleccionado
-    const papaSeleccionada = productos.productos.papas_fritas.items.find(
+    const papaSeleccionada = papasFritas.find(
       item => item.tamaño === tamaño
     )
     
@@ -445,7 +1123,7 @@ function App() {
   // Función preparada para mostrar categoría bebidas
   const mostrarBebidas = () => {
     setCategoriaSeleccionada('Bebidas')
-    setProductosActuales(productos.productos.bebidas.items as Producto[])
+    setProductosActuales(bebidas)
     setAgregadosActuales([])
     setMostrarTamaños(false)
     setMostrarAgregados(false)
@@ -456,7 +1134,7 @@ function App() {
   // Función preparada para mostrar categoría extras
   const mostrarExtras = () => {
     setCategoriaSeleccionada('Extras')
-    setProductosActuales(productos.productos.extras.items as Producto[])
+    setProductosActuales(extras)
     setAgregadosActuales([])
     setMostrarTamaños(false)
     setMostrarAgregados(false)
@@ -687,7 +1365,6 @@ function App() {
         
         // Si es chorrillana, actualizar el precio según el tamaño
         if (item.producto.id.includes('chorrillana_')) {
-          const chorrillanas = productos.productos.chorrillanas.items
           const chorrillanaNueva = chorrillanas.find(c => c.tamaño === nuevoTamaño)
           
           if (chorrillanaNueva) {
@@ -701,8 +1378,7 @@ function App() {
           }
         } else if (item.producto.id.includes('papas_')) {
           // Si es papa, actualizar el precio según el tamaño
-          const papas = productos.productos.papas_fritas.items
-          const papaNueva = papas.find(p => p.tamaño === nuevoTamaño)
+          const papaNueva = papasFritas.find(p => p.tamaño === nuevoTamaño)
           
           if (papaNueva) {
             nuevoProducto = {
@@ -1455,11 +2131,253 @@ function App() {
   }
   void _unused // Suprimir warning de variable no utilizada
 
+  // Si se debe mostrar el gestor, mostrar la página del gestor
+  if (mostrarGestor && usuarioAutenticado) {
+    return (
+      <>
+        <div className="gestor-container">
+        <div className="gestor-header">
+          <h1 className="gestor-title">Gestor Papafactory</h1>
+          <div className="gestor-menu">
+            <button 
+              className="btn-volver"
+              onClick={() => setMostrarGestor(false)}
+            >
+              Volver a la página principal
+            </button>
+            <button 
+              className="btn-cerrar-sesion"
+              onClick={handleCerrarSesion}
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+        
+        <div className="gestor-content">
+          <h2 className="gestor-subtitle">Gestor Papafactory</h2>
+          
+          {/* Pestañas */}
+          <div className="gestor-tabs">
+            <button
+              className={`gestor-tab ${pestañaActiva === 'productos' ? 'active' : ''}`}
+              onClick={() => setPestañaActiva('productos')}
+            >
+              Todos los Productos
+            </button>
+            <button
+              className={`gestor-tab ${pestañaActiva === 'agregados' ? 'active' : ''}`}
+              onClick={() => setPestañaActiva('agregados')}
+            >
+              Agregados
+            </button>
+          </div>
+
+          {/* Contenido de Productos */}
+          {pestañaActiva === 'productos' && (
+            <>
+              {cargandoProductos ? (
+            <div className="gestor-loading">Cargando productos...</div>
+          ) : (
+            <>
+              <div className="gestor-stats">
+                <div className="stat-card">
+                  <div className="stat-label">Total Productos</div>
+                  <div className="stat-value">{todosLosProductosAPI.length}</div>
+                </div>
+              </div>
+
+              <div className="gestor-productos">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 className="gestor-section-title" style={{ marginBottom: 0 }}>Todos los Productos ({todosLosProductosAPI.length})</h3>
+                  <button
+                    className="btn-crear-producto"
+                    onClick={handleCrearProducto}
+                  >
+                    + Nuevo Producto
+                  </button>
+                </div>
+                <div className="productos-grid">
+                  {todosLosProductosAPI.map((producto) => (
+                    <div key={producto.id} className="producto-card-gestor">
+                      <div className="producto-header-gestor">
+                        <h4 className="producto-nombre-gestor">{producto.nombre}</h4>
+                        <span className="producto-precio-gestor">{formatearPrecio(producto.precio)}</span>
+                      </div>
+                      <div className="producto-info-gestor">
+                        <div className="producto-detail">
+                          <span className="detail-label">ID:</span>
+                          <span className="detail-value">{producto.id}</span>
+                        </div>
+                        <div className="producto-detail">
+                          <span className="detail-label">Tamaño:</span>
+                          <span className="detail-value">{producto.tamaño}</span>
+                        </div>
+                        <div className="producto-detail">
+                          <span className="detail-label">Moneda:</span>
+                          <span className="detail-value">{producto.moneda}</span>
+                        </div>
+                        {producto.descripcion && (
+                          <div className="producto-imagen">
+                            <img src={producto.descripcion} alt={producto.nombre} onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }} />
+                          </div>
+                        )}
+                        <div className="producto-actions">
+                          <button
+                            className="btn-editar"
+                            onClick={() => handleEditarProducto(producto)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className="btn-eliminar"
+                            onClick={() => handleEliminarProducto(producto.id)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {todosLosProductosAPI.length === 0 && (
+                  <div className="gestor-empty">No hay productos cargados desde la API</div>
+                )}
+              </div>
+            </>
+              )}
+            </>
+          )}
+
+          {/* Contenido de Agregados */}
+          {pestañaActiva === 'agregados' && (
+            <div className="gestor-agregados">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 className="gestor-section-title" style={{ marginBottom: 0 }}>Gestor de Agregados</h3>
+              </div>
+
+              {/* Agregados Básicos */}
+              <div className="agregados-section-gestor">
+                <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
+                  Agregados Básicos
+                </h4>
+                <div className="agregados-grid-gestor">
+                  {productos.productos.agregados_basicos.items.map((agregado, index) => (
+                    <div key={`basico-${index}`} className="agregado-card-gestor">
+                      <div className="agregado-header-gestor">
+                        <h5 className="agregado-nombre-gestor">{agregado}</h5>
+                      </div>
+                      <div className="agregado-info-gestor">
+                        <div className="agregado-detail">
+                          <span className="detail-label">Precios por Tamaño:</span>
+                        </div>
+                        <div className="agregado-precios">
+                          <div className="precio-item">
+                            <span className="precio-label">M:</span>
+                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_basicos.precios_por_tamaño.M)}</span>
+                          </div>
+                          <div className="precio-item">
+                            <span className="precio-label">L:</span>
+                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_basicos.precios_por_tamaño.L)}</span>
+                          </div>
+                          <div className="precio-item">
+                            <span className="precio-label">XL:</span>
+                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_basicos.precios_por_tamaño.XL)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Agregados Premium */}
+              <div className="agregados-section-gestor" style={{ marginTop: '30px' }}>
+                <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
+                  Agregados Premium
+                </h4>
+                <div className="agregados-grid-gestor">
+                  {productos.productos.agregados_premium.items.map((agregado, index) => (
+                    <div key={`premium-${index}`} className="agregado-card-gestor">
+                      <div className="agregado-header-gestor">
+                        <h5 className="agregado-nombre-gestor">{agregado}</h5>
+                      </div>
+                      <div className="agregado-info-gestor">
+                        <div className="agregado-detail">
+                          <span className="detail-label">Precios por Tamaño:</span>
+                        </div>
+                        <div className="agregado-precios">
+                          <div className="precio-item">
+                            <span className="precio-label">M:</span>
+                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_premium.precios_por_tamaño.M)}</span>
+                          </div>
+                          <div className="precio-item">
+                            <span className="precio-label">L:</span>
+                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_premium.precios_por_tamaño.L)}</span>
+                          </div>
+                          <div className="precio-item">
+                            <span className="precio-label">XL:</span>
+                            <span className="precio-value">{formatearPrecio(productos.productos.agregados_premium.precios_por_tamaño.XL)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Modal de CRUD de Productos */}
+      <ModalProductoCRUD
+        show={mostrarModalProducto}
+        onClose={() => {
+          setMostrarModalProducto(false)
+          setProductoEditando(null)
+          setProductoCompletoEditando(null)
+        }}
+        producto={productoEditando}
+        productoCompleto={productoCompletoEditando}
+        onSave={handleGuardarProducto}
+      />
+      </>
+    );
+  }
+
   return (
     <>
       {/* Header simple */}
       <div className="app-header">
         <h1 className="app-title">PAPA FACTORY</h1>
+        <div className="header-buttons">
+          {usuarioAutenticado ? (
+            <>
+              <button 
+                className="btn-gestor"
+                onClick={() => setMostrarGestor(true)}
+              >
+                Ir al Gestor
+              </button>
+              <button 
+                className="btn-cerrar-sesion-header"
+                onClick={handleCerrarSesion}
+              >
+                Cerrar Sesión
+              </button>
+            </>
+          ) : (
+            <button 
+              className="btn-login"
+              onClick={() => setMostrarModalLogin(true)}
+            >
+              Iniciar Sesión
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Layout principal de 2 columnas */}
@@ -1469,45 +2387,61 @@ function App() {
           {/* Sección Papas Fritas */}
           <div className="section-title">PAPAS FRITAS</div>
           <div className="papas-grid">
-            {productos.productos.papas_fritas.items.map((papa) => (
-              <div 
-                key={papa.id} 
-                className="papa-card"
-                onClick={() => agregarProductoAlPedido(papa as Producto)}
-                style={{
-                  backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${getImagenPapa(papa.tamaño)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  color: 'white'
-                }}
-              >
-                <h5>{papa.nombre.toUpperCase()}</h5>
-                <div className="size" style={{
-                  backgroundColor: 'rgba(255, 215, 0, 0.9)',
-                  color: '#000',
-                  padding: '3px 6px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '11px',
-                  display: 'inline-block',
-                  textShadow: 'none',
-                  border: '1px solid rgba(0,0,0,0.2)'
-                }}>{getTamañoParaPedido(papa.tamaño || '')}</div>
-                <div className="price">{formatearPrecio(papa.precio)}</div>
+            {cargandoProductos ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px' }}>
+                Cargando productos...
               </div>
-            ))}
+            ) : (
+              papasFritas.length > 0 ? (
+                papasFritas.map((papa) => (
+                  <div 
+                    key={papa.id} 
+                    className="papa-card"
+                    onClick={() => agregarProductoAlPedido(papa as Producto)}
+                    style={{
+                      backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${papa.descripcion || getImagenPapa(papa.tamaño)})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      color: 'white',
+                      position: 'relative'
+                    }}
+                  >
+                    <h5>PAPAS FRITAS {getTamañoParaPedido(papa.tamaño || '')}</h5>
+                    <div className="size" style={{
+                      backgroundColor: '#FFD700',
+                      color: '#000',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '16px',
+                      display: 'inline-block',
+                      margin: '8px auto',
+                      textShadow: 'none',
+                      border: 'none',
+                      minWidth: '50px'
+                    }}>{getTamañoParaPedido(papa.tamaño || '')}</div>
+                    <div className="price">{formatearPrecio(papa.precio)}</div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
+                  No hay productos de esta categoría en la API
+                </div>
+              )
+            )}
           </div>
 
           {/* Sección Chorrillanas */}
           <div className="section-title">CHORRILLANAS</div>
           <div className="papas-grid">
-            {productos.productos.chorrillanas.items.map((chorrillana) => (
-              <div 
-                key={chorrillana.id} 
-                className="papa-card"
-                onClick={() => agregarProductoAlPedido(chorrillana as Producto)}
-                style={{
-                  backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${getImagenChorrillana(chorrillana.id)})`,
+            {chorrillanas.length > 0 ? (
+              chorrillanas.map((chorrillana) => (
+                <div 
+                  key={chorrillana.id} 
+                  className="papa-card"
+                  onClick={() => agregarProductoAlPedido(chorrillana as Producto)}
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${chorrillana.descripcion || getImagenChorrillana(chorrillana.id)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   color: 'white'
@@ -1527,19 +2461,25 @@ function App() {
                 }}>{chorrillana.tamaño}</div>
                 <div className="price">{formatearPrecio(chorrillana.precio)}</div>
               </div>
-            ))}
+              ))
+            ) : (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
+                No hay productos de esta categoría en la API
+              </div>
+            )}
           </div>
 
           {/* Sección Bebestibles */}
           <div className="section-title">BEBESTIBLES</div>
           <div className="bebestibles-grid">
-            {productos.productos.bebidas.items.map((bebida) => (
+            {bebidas.length > 0 ? (
+              bebidas.map((bebida) => (
               <div 
                 key={bebida.id} 
                 className="bebida-card"
                 onClick={() => agregarProductoAlPedido(bebida as Producto)}
                 style={{
-                  backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(${getImagenBebida(bebida.id)})`,
+                  backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${bebida.descripcion || getImagenBebida(bebida.id)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   color: 'white'
@@ -1549,50 +2489,39 @@ function App() {
                 <div className="size">{bebida.tamaño}</div>
                 <div className="price">{formatearPrecio(bebida.precio)}</div>
               </div>
-            ))}
+              ))
+            ) : (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
+                No hay productos de esta categoría en la API
+              </div>
+            )}
           </div>
 
           {/* Sección Extras */}
           <div className="section-title">EXTRAS</div>
           <div className="extras-grid">
-            {/* Botón de Agregados Independientes */}
-            <div 
-              className="extra-card"
-              onClick={abrirModalAgregadosIndependientes}
-              style={{
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url(https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=400&h=300&fit=crop&crop=center)`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                color: 'white'
-              }}
-            >
-              <h6>AGREGADOS</h6>
-              <div style={{ 
-                fontSize: '10px', 
-                margin: '2px 0', 
-                textAlign: 'center',
-                textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
-              }}>
-                Comprar agregados independientes
+            {extras.length > 0 ? (
+              extras.map((extra) => (
+                <div 
+                  key={extra.id} 
+                  className="extra-card"
+                  onClick={() => agregarProductoAlPedido(extra as Producto)}
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url(${extra.descripcion || getImagenExtra(extra.id)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    color: 'white'
+                  }}
+                >
+                  <h6>{extra.nombre}</h6>
+                  <div className="price">{formatearPrecio(extra.precio)}</div>
+                </div>
+              ))
+            ) : (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
+                No hay productos de esta categoría en la API
               </div>
-              <div className="price">Desde $700</div>
-            </div>
-            {productos.productos.extras.items.map((extra) => (
-              <div 
-                key={extra.id} 
-                className="extra-card"
-                onClick={() => agregarProductoAlPedido(extra as Producto)}
-                style={{
-                  backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url(${getImagenExtra(extra.id)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  color: 'white'
-                }}
-              >
-                <h6>{extra.nombre}</h6>
-                <div className="price">{formatearPrecio(extra.precio)}</div>
-              </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -2232,6 +3161,26 @@ function App() {
         onDecrementarAgregado={handleDecrementarAgregado}
         onCambiarTamañoProducto={handleCambiarTamañoProducto}
         agregadosExistentes={itemEditandoId ? pedidoActual.find(item => item.id === itemEditandoId)?.agregados || [] : []}
+      />
+
+      {/* Modal de Login */}
+      <ModalLogin
+        show={mostrarModalLogin}
+        onClose={() => setMostrarModalLogin(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Modal de CRUD de Productos */}
+      <ModalProductoCRUD
+        show={mostrarModalProducto}
+        onClose={() => {
+          setMostrarModalProducto(false)
+          setProductoEditando(null)
+          setProductoCompletoEditando(null)
+        }}
+        producto={productoEditando}
+        productoCompleto={productoCompletoEditando}
+        onSave={handleGuardarProducto}
       />
     </>
   )
