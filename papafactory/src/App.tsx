@@ -32,7 +32,6 @@ function ModalAgregados({
   producto, 
   onAgregarAgregado,
   onDecrementarAgregado,
-  onCambiarTamañoProducto,
   agregadosExistentes = []
 }: { 
   show: boolean; 
@@ -40,7 +39,6 @@ function ModalAgregados({
   producto: Producto | null;
   onAgregarAgregado: (agregado: Agregado) => void;
   onDecrementarAgregado: (nombreAgregado: string) => void;
-  onCambiarTamañoProducto?: (nuevoTamaño: string) => void;
   agregadosExistentes?: AgregadoEnPedido[];
 }) {
   const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto?.tamaño || 'M');
@@ -255,7 +253,6 @@ function ModalProductoCRUD({
   const [nombre, setNombre] = useState<string>('')
   const [tamano, setTamano] = useState<string>('')
   const [precio, setPrecio] = useState<number>(0)
-  const [moneda, setMoneda] = useState<string>('CLP')
   const [categoria, setCategoria] = useState<string>('')
   const [imagen_producto, setImagen_producto] = useState<string>('')
   const [error, setError] = useState<string>('')
@@ -267,7 +264,6 @@ function ModalProductoCRUD({
       setNombre(productoCompleto.nombre)
       setTamano(productoCompleto.tamano)
       setPrecio(productoCompleto.precio)
-      setMoneda(productoCompleto.moneda)
       // Normalizar la categoría para que coincida con las opciones del select
       const catNormalizada = normalizarCategoria(productoCompleto.categoria)
       setCategoria(catNormalizada)
@@ -277,7 +273,6 @@ function ModalProductoCRUD({
       setNombre(producto.nombre)
       setTamano(producto.tamaño)
       setPrecio(producto.precio)
-      setMoneda(producto.moneda)
       setCategoria('')
       setImagen_producto(producto.descripcion || '')
     } else {
@@ -285,7 +280,6 @@ function ModalProductoCRUD({
       setNombre('')
       setTamano('')
       setPrecio(0)
-      setMoneda('CLP')
       setCategoria('')
       setImagen_producto('')
     }
@@ -1735,62 +1729,6 @@ function App() {
     setPedidoActual(pedidoActualizado)
   }
 
-  const handleCambiarTamañoProducto = (nuevoTamaño: string) => {
-    if (!itemEditandoId) return
-
-    const pedidoActualizado = pedidoActual.map(item => {
-      if (item.id === itemEditandoId) {
-        let nuevoProducto = { ...item.producto }
-        
-        // Si es chorrillana, actualizar el precio según el tamaño
-        if (item.producto.id.includes('chorrillana_')) {
-          const chorrillanaNueva = chorrillanas.find(c => c.tamaño === nuevoTamaño)
-          
-          if (chorrillanaNueva) {
-            nuevoProducto = {
-              ...nuevoProducto,
-              id: chorrillanaNueva.id,
-              nombre: chorrillanaNueva.nombre,
-              tamaño: chorrillanaNueva.tamaño,
-              precio: chorrillanaNueva.precio
-            }
-          }
-        } else if (item.producto.id.includes('papas_')) {
-          // Si es papa, actualizar el precio según el tamaño
-          const papaNueva = papasFritas.find(p => p.tamaño === nuevoTamaño)
-          
-          if (papaNueva) {
-            nuevoProducto = {
-              ...nuevoProducto,
-              id: papaNueva.id,
-              nombre: papaNueva.nombre,
-              tamaño: papaNueva.tamaño,
-              precio: papaNueva.precio
-            }
-          }
-        }
-
-        const itemActualizado = {
-          ...item,
-          id: `${nuevoProducto.id}-${Date.now()}`,
-          producto: nuevoProducto
-        }
-        
-        // Recalcular subtotal
-        itemActualizado.subtotal = calcularSubtotalItem(itemActualizado)
-        
-        // Actualizar el itemEditandoId con el nuevo id
-        setItemEditandoId(itemActualizado.id)
-        setProductoParaAgregados(nuevoProducto)
-        
-        return itemActualizado
-      }
-      return item
-    })
-
-    setPedidoActual(pedidoActualizado)
-  }
-
   const eliminarDelPedido = (id: string) => {
     setPedidoActual(pedidoActual.filter(item => item.id !== id))
   }
@@ -2456,10 +2394,6 @@ function App() {
   }
 
   // Funciones para manejar agregados independientes
-  const abrirModalAgregadosIndependientes = () => {
-    setMostrarModalAgregadosIndependientes(true)
-  }
-
   const cerrarModalAgregadosIndependientes = () => {
     setMostrarModalAgregadosIndependientes(false)
   }
@@ -3611,7 +3545,6 @@ function App() {
         producto={productoParaAgregados}
         onAgregarAgregado={handleAgregarAgregado}
         onDecrementarAgregado={handleDecrementarAgregado}
-        onCambiarTamañoProducto={handleCambiarTamañoProducto}
         agregadosExistentes={itemEditandoId ? pedidoActual.find(item => item.id === itemEditandoId)?.agregados || [] : []}
       />
 
