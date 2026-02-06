@@ -52,7 +52,8 @@ function ModalAgregados({
 
   if (!show || !producto) return null;
 
-  const esChorrillana = producto.id.includes('chorrillana_');
+  const esChorrillana = producto.id.includes('chorrillana_') || producto.id.toLowerCase().includes('chorrillana') || ((producto as any).categoria?.toLowerCase() || '').includes('chorrillana');
+  const esSalchipapa = producto.id.includes('salchipapa_') || producto.id.toLowerCase().includes('salchipapa') || ((producto as any).categoria?.toLowerCase() || '').includes('salchipapa');
 
   const formatearPrecio = (precio: number): string => {
     return new Intl.NumberFormat('es-CL', {
@@ -125,7 +126,7 @@ function ModalAgregados({
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
         <div className="modal-header">
-          <h2>{esChorrillana ? 'Chorrillana - Agregados Disponibles' : 'Papas Fritas - Agregados Disponibles'}</h2>
+          <h2>{esSalchipapa ? 'Salchipapas - Agregados Disponibles' : esChorrillana ? 'Chorrillana - Agregados Disponibles' : 'Papas Fritas - Agregados Disponibles'}</h2>
           <button className="btn-cerrar" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
@@ -252,7 +253,7 @@ function ModalProductoCRUD({
 }) {
   const [nombre, setNombre] = useState<string>('')
   const [tamano, setTamano] = useState<string>('')
-  const [precio, setPrecio] = useState<number>(0)
+  const [precioStr, setPrecioStr] = useState<string>('')
   const [categoria, setCategoria] = useState<string>('')
   const [imagen_producto, setImagen_producto] = useState<string>('')
   const [error, setError] = useState<string>('')
@@ -263,7 +264,7 @@ function ModalProductoCRUD({
       // Si tenemos el producto completo desde la API, usar esos datos
       setNombre(productoCompleto.nombre)
       setTamano(productoCompleto.tamano)
-      setPrecio(productoCompleto.precio)
+      setPrecioStr(productoCompleto.precio != null ? String(productoCompleto.precio) : '')
       // Normalizar la categoría para que coincida con las opciones del select
       const catNormalizada = normalizarCategoria(productoCompleto.categoria)
       setCategoria(catNormalizada)
@@ -272,14 +273,14 @@ function ModalProductoCRUD({
       // Si solo tenemos el producto básico, usar esos datos
       setNombre(producto.nombre)
       setTamano(producto.tamaño)
-      setPrecio(producto.precio)
+      setPrecioStr(producto.precio != null ? String(producto.precio) : '')
       setCategoria('')
       setImagen_producto(producto.descripcion || '')
     } else {
       // Si no hay producto, limpiar el formulario
       setNombre('')
       setTamano('')
-      setPrecio(0)
+      setPrecioStr('')
       setCategoria('')
       setImagen_producto('')
     }
@@ -289,11 +290,14 @@ function ModalProductoCRUD({
   const normalizarCategoria = (cat: string): string => {
     if (!cat) return ''
     const catLower = cat.toLowerCase()
-    if (catLower.includes('papa') && !catLower.includes('chorrillana')) {
+    if (catLower.includes('papa') && !catLower.includes('chorrillana') && !catLower.includes('salchipapa')) {
       return 'Papas Fritas'
     }
-    if (catLower.includes('chorrillana')) {
+    if (catLower.includes('chorrillana') && !catLower.includes('salchipapa')) {
       return 'Chorrillanas'
+    }
+    if (catLower.includes('salchipapa')) {
+      return 'Salchipapas'
     }
     if (catLower.includes('bebida') || catLower.includes('bebestible')) {
       return 'Bebestibles'
@@ -312,12 +316,19 @@ function ModalProductoCRUD({
     setGuardando(true)
 
     try {
+      const precioNum = precioStr.trim() === '' ? NaN : parseFloat(precioStr.replace(',', '.'))
+      if (isNaN(precioNum) || precioNum < 0) {
+        setError('Ingrese un precio válido (solo números)')
+        setGuardando(false)
+        return
+      }
+
       const productoData: ProductoAPI = {
         id: productoCompleto?.id || producto?.id || '',
         nombre,
         tamano,
-        precio,
-        moneda: 'CLP', // Siempre CLP
+        precio: precioNum,
+        moneda: 'CLP', // Siempre CLP (campo no mostrado en el formulario)
         categoria: categoria || 'Papas Fritas', // Usar la categoría seleccionada o Papas Fritas por defecto
         imagen_producto: imagen_producto || undefined
       }
@@ -404,9 +415,13 @@ function ModalProductoCRUD({
                 Precio *
               </label>
               <input
-                type="number"
-                value={precio}
-                onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)}
+                type="text"
+                inputMode="numeric"
+                value={precioStr}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === '' || /^\d*\.?\d*$/.test(val)) setPrecioStr(val)
+                }}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -415,31 +430,7 @@ function ModalProductoCRUD({
                   fontSize: '16px',
                   boxSizing: 'border-box'
                 }}
-                placeholder="Ingrese el precio"
-                required
-                min="0"
-                step="0.01"
-              />
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
-                Moneda *
-              </label>
-              <input
-                type="text"
-                value="CLP"
-                readOnly
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  boxSizing: 'border-box',
-                  backgroundColor: '#f5f5f5',
-                  cursor: 'not-allowed'
-                }}
-                placeholder="CLP"
+                placeholder="Ingrese el precio (solo números)"
               />
             </div>
             <div style={{ marginBottom: '20px' }}>
@@ -464,6 +455,7 @@ function ModalProductoCRUD({
                 <option value="">Seleccione una categoría</option>
                 <option value="Papas Fritas">Papas Fritas</option>
                 <option value="Chorrillanas">Chorrillanas</option>
+                <option value="Salchipapas">Salchipapas</option>
                 <option value="Bebestibles">Bebestibles</option>
                 <option value="Extras">Extras</option>
               </select>
@@ -926,6 +918,7 @@ interface Producto {
   precio: number;
   moneda: string;
   descripcion?: string;
+  categoria?: string;
 }
 
 interface Agregado {
@@ -977,6 +970,7 @@ function App() {
   // Estados para productos desde la API
   const [papasFritas, setPapasFritas] = useState<Producto[]>([])
   const [chorrillanas, setChorrillanas] = useState<Producto[]>([])
+  const [salchipapas, setSalchipapas] = useState<Producto[]>([])
   const [bebidas, setBebidas] = useState<Producto[]>([])
   const [extras, setExtras] = useState<Producto[]>([])
   const [todosLosProductosAPI, setTodosLosProductosAPI] = useState<Producto[]>([])
@@ -985,7 +979,23 @@ function App() {
   const [productoEditando, setProductoEditando] = useState<Producto | null>(null)
   const [productoCompletoEditando, setProductoCompletoEditando] = useState<ProductoAPI | null>(null)
   const [pestañaActiva, setPestañaActiva] = useState<'productos' | 'agregados'>('productos')
-  
+  const [filtroCategoriaGestor, setFiltroCategoriaGestor] = useState<string>('Todas')
+  const [filtroAgregadosGestor, setFiltroAgregadosGestor] = useState<string>('Todos')
+  const [vistaProductosGestor, setVistaProductosGestor] = useState<'mosaico' | 'lista'>('mosaico')
+  const [vistaAgregadosGestor, setVistaAgregadosGestor] = useState<'mosaico' | 'lista'>('mosaico')
+
+  // Normaliza la categoría del producto al nombre del filtro (Chorrillana/Chorrillanas -> Chorrillanas, etc.)
+  const normalizarCategoriaParaFiltro = (categoria: string | undefined): string | null => {
+    if (!categoria) return null
+    const c = categoria.toLowerCase()
+    if (c.includes('chorrillana') && !c.includes('salchipapa')) return 'Chorrillanas'
+    if (c.includes('salchipapa')) return 'Salchipapas'
+    if ((c.includes('papa') || c.includes('papas')) && !c.includes('chorrillana') && !c.includes('salchipapa')) return 'Papas Fritas'
+    if (c.includes('bebida') || c.includes('bebestible')) return 'Bebestibles'
+    if (c.includes('extra')) return 'Extras'
+    return null
+  }
+
   // Estados para agregados desde la API
   const [agregadosAPI, setAgregadosAPI] = useState<AgregadoAPI[]>([])
   const [cargandoAgregados, setCargandoAgregados] = useState<boolean>(true)
@@ -1009,7 +1019,8 @@ function App() {
         tamaño: p.tamano,
         precio: p.precio,
         moneda: p.moneda,
-        descripcion: p.imagen_producto
+        descripcion: p.imagen_producto,
+        categoria: p.categoria
       }))
 
       // Guardar todos los productos de la API (sin filtrar)
@@ -1020,7 +1031,7 @@ function App() {
       const papasFiltradas = productosAPI
         .filter(p => {
           const cat = p.categoria?.toLowerCase() || ''
-          return cat.includes('papa') && !cat.includes('chorrillana') || 
+          return (cat.includes('papa') && !cat.includes('chorrillana') && !cat.includes('salchipapa')) || 
                  p.categoria === 'Papas Fritas' || 
                  p.categoria === 'papas fritas'
         })
@@ -1036,7 +1047,21 @@ function App() {
       const chorrillanasFiltradas = productosAPI
         .filter(p => {
           const cat = p.categoria?.toLowerCase() || ''
-          return cat.includes('chorrillana') || p.categoria === 'Chorrillanas'
+          return (cat.includes('chorrillana') && !cat.includes('salchipapa')) || p.categoria === 'Chorrillanas'
+        })
+        .map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          tamaño: p.tamano,
+          precio: p.precio,
+          moneda: p.moneda,
+          descripcion: p.imagen_producto
+        }))
+      
+      const salchipapasFiltradas = productosAPI
+        .filter(p => {
+          const cat = p.categoria?.toLowerCase() || ''
+          return cat.includes('salchipapa') || p.categoria === 'Salchipapas' || p.categoria === 'Salchipapa'
         })
         .map(p => ({
           id: p.id,
@@ -1078,15 +1103,17 @@ function App() {
       
       // Si no hay productos filtrados, mostrar todos los productos en papas fritas como fallback
       if (papasFiltradas.length === 0 && chorrillanasFiltradas.length === 0 && 
-          bebidasFiltradas.length === 0 && extrasFiltradas.length === 0) {
+          salchipapasFiltradas.length === 0 && bebidasFiltradas.length === 0 && extrasFiltradas.length === 0) {
         // Si no hay productos que coincidan, mostrar todos en papas fritas para que se vean
         setPapasFritas(productosConvertidos)
         setChorrillanas([])
+        setSalchipapas([])
         setBebidas([])
         setExtras([])
       } else {
         setPapasFritas(papasFiltradas)
         setChorrillanas(chorrillanasFiltradas)
+        setSalchipapas(salchipapasFiltradas)
         setBebidas(bebidasFiltradas)
         setExtras(extrasFiltradas)
       }
@@ -1095,6 +1122,7 @@ function App() {
       // En caso de error, usar datos locales como fallback
       setPapasFritas(productos.productos.papas_fritas.items as Producto[])
       setChorrillanas(productos.productos.chorrillanas.items as Producto[])
+      setSalchipapas([])
       setBebidas(productos.productos.bebidas.items as Producto[])
       setExtras(productos.productos.extras.items as Producto[])
     } finally {
@@ -1588,19 +1616,22 @@ function App() {
   }
 
   const agregarProductoAlPedido = (producto: Producto) => {
-    // Detectar si es papa frita o chorrillana
+    // Detectar si es papa frita, chorrillana o salchipapa
     // Verificar primero por ID (para compatibilidad con datos locales)
     const esPapaFritaPorId = producto.id.includes('papas_') || 
-                              (producto.id.toLowerCase().includes('papa') && !producto.id.toLowerCase().includes('chorrillana'))
+                              (producto.id.toLowerCase().includes('papa') && !producto.id.toLowerCase().includes('chorrillana') && !producto.id.toLowerCase().includes('salchipapa'))
     const esChorrillanaPorId = producto.id.includes('chorrillana_') || 
                                 producto.id.toLowerCase().includes('chorrillana')
+    const esSalchipapaPorId = producto.id.includes('salchipapa_') || 
+                               producto.id.toLowerCase().includes('salchipapa')
     
     // Verificar si está en los arrays de productos cargados desde la API
     const esPapaFrita = esPapaFritaPorId || papasFritas.some(p => p.id === producto.id)
     const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === producto.id)
+    const esSalchipapa = esSalchipapaPorId || salchipapas.some(s => s.id === producto.id)
     
-    // Si es una papa frita o chorrillana, abrir modal de agregados
-    if (esPapaFrita || esChorrillana) {
+    // Si es una papa frita, chorrillana o salchipapa, abrir modal de agregados
+    if (esPapaFrita || esChorrillana || esSalchipapa) {
       // Crear el item inmediatamente en el pedido
       const nuevoItem: ItemPedido = {
         id: `${producto.id}-${Date.now()}`,
@@ -1677,24 +1708,28 @@ function App() {
   }
 
   const handleItemClick = (item: ItemPedido) => {
-    // Detectar si es papa frita o chorrillana para poder editar agregados
+    // Detectar si es papa frita, chorrillana o salchipapa para poder editar agregados
     // Verificar por ID (compatibilidad con datos locales)
     const esPapaFritaPorId = item.producto.id.includes('papas_') || 
-                              (item.producto.id.toLowerCase().includes('papa') && !item.producto.id.toLowerCase().includes('chorrillana'))
+                              (item.producto.id.toLowerCase().includes('papa') && !item.producto.id.toLowerCase().includes('chorrillana') && !item.producto.id.toLowerCase().includes('salchipapa'))
     const esChorrillanaPorId = item.producto.id.includes('chorrillana_') || 
                                 item.producto.id.toLowerCase().includes('chorrillana')
+    const esSalchipapaPorId = item.producto.id.includes('salchipapa_') || 
+                               item.producto.id.toLowerCase().includes('salchipapa')
     
     // Verificar por arrays de productos de la API
     const esPapaFrita = esPapaFritaPorId || papasFritas.some(p => p.id === item.producto.id)
     const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === item.producto.id)
+    const esSalchipapa = esSalchipapaPorId || salchipapas.some(s => s.id === item.producto.id)
     
     // Verificar por categoría (para productos de la API)
     const categoria = (item.producto as any).categoria?.toLowerCase() || ''
-    const esPapaFritaPorCategoria = categoria.includes('papa') && !categoria.includes('chorrillana')
-    const esChorrillanaPorCategoria = categoria.includes('chorrillana')
+    const esPapaFritaPorCategoria = categoria.includes('papa') && !categoria.includes('chorrillana') && !categoria.includes('salchipapa')
+    const esChorrillanaPorCategoria = categoria.includes('chorrillana') && !categoria.includes('salchipapa')
+    const esSalchipapaPorCategoria = categoria.includes('salchipapa')
     
-    // Mostrar modal para papas fritas y chorrillanas (para editar agregados)
-    if (esPapaFrita || esChorrillana || esPapaFritaPorCategoria || esChorrillanaPorCategoria) {
+    // Mostrar modal para papas fritas, chorrillanas y salchipapas (para editar agregados)
+    if (esPapaFrita || esChorrillana || esSalchipapa || esPapaFritaPorCategoria || esChorrillanaPorCategoria || esSalchipapaPorCategoria) {
       setProductoParaAgregados(item.producto)
       setItemEditandoId(item.id)
       setShowModalAgregados(true)
@@ -2468,7 +2503,11 @@ function App() {
         </div>
         
         <div className="gestor-content">
-          <h2 className="gestor-subtitle">Gestor Papafactory</h2>
+          <h2 className="gestor-subtitle">
+            {pestañaActiva === 'productos'
+              ? `Total Productos: ${todosLosProductosAPI.length}`
+              : `Total Agregados: ${agregadosAPI.length}`}
+          </h2>
           
           {/* Pestañas */}
           <div className="gestor-tabs">
@@ -2493,16 +2532,27 @@ function App() {
             <div className="gestor-loading">Cargando productos...</div>
           ) : (
             <>
-              <div className="gestor-stats">
-                <div className="stat-card">
-                  <div className="stat-label">Total Productos</div>
-                  <div className="stat-value">{todosLosProductosAPI.length}</div>
-                </div>
-              </div>
-
               <div className="gestor-productos">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3 className="gestor-section-title" style={{ marginBottom: 0 }}>Todos los Productos ({todosLosProductosAPI.length})</h3>
+                <div className="gestor-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <div className="gestor-vista-buttons">
+                    <span className="gestor-filtros-label" style={{ marginBottom: 0, marginRight: '10px' }}>Vista:</span>
+                    <button
+                      type="button"
+                      className={`gestor-filtro-btn ${vistaProductosGestor === 'mosaico' ? 'active' : ''}`}
+                      onClick={() => setVistaProductosGestor('mosaico')}
+                      title="Vista mosaico"
+                    >
+                      <i className="fa-solid fa-border-all"></i>
+                    </button>
+                    <button
+                      type="button"
+                      className={`gestor-filtro-btn ${vistaProductosGestor === 'lista' ? 'active' : ''}`}
+                      onClick={() => setVistaProductosGestor('lista')}
+                      title="Vista lista"
+                    >
+                      <i className="fa-solid fa-list"></i>
+                    </button>
+                  </div>
                   <button
                     className="btn-crear-producto"
                     onClick={handleCrearProducto}
@@ -2510,8 +2560,33 @@ function App() {
                     + Nuevo Producto
                   </button>
                 </div>
-                <div className="productos-grid">
-                  {todosLosProductosAPI.map((producto) => (
+                <div className="gestor-filtros">
+                  <span className="gestor-filtros-label">Filtrar por categoría:</span>
+                  <div className="gestor-filtros-buttons">
+                    {['Todas', 'Papas Fritas', 'Chorrillanas', 'Salchipapas', 'Bebestibles', 'Extras'].map((cat) => {
+                      const productosEnCategoria = cat === 'Todas'
+                        ? todosLosProductosAPI.length
+                        : todosLosProductosAPI.filter(p => normalizarCategoriaParaFiltro(p.categoria) === cat).length
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          className={`gestor-filtro-btn ${filtroCategoriaGestor === cat ? 'active' : ''}`}
+                          onClick={() => setFiltroCategoriaGestor(cat)}
+                        >
+                          {cat} ({productosEnCategoria})
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className={`productos-grid ${vistaProductosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
+                  {todosLosProductosAPI
+                    .filter((p) =>
+                      filtroCategoriaGestor === 'Todas' ||
+                      normalizarCategoriaParaFiltro(p.categoria) === filtroCategoriaGestor
+                    )
+                    .map((producto) => (
                     <div key={producto.id} className="producto-card-gestor">
                       <div className="producto-header-gestor">
                         <h4 className="producto-nombre-gestor">{producto.nombre}</h4>
@@ -2555,8 +2630,15 @@ function App() {
                     </div>
                   ))}
                 </div>
-                {todosLosProductosAPI.length === 0 && (
-                  <div className="gestor-empty">No hay productos cargados desde la API</div>
+                {(todosLosProductosAPI.length === 0 || todosLosProductosAPI.filter((p) =>
+                  filtroCategoriaGestor === 'Todas' ||
+                  normalizarCategoriaParaFiltro(p.categoria) === filtroCategoriaGestor
+                ).length === 0) && (
+                  <div className="gestor-empty">
+                    {todosLosProductosAPI.length === 0
+                      ? 'No hay productos cargados desde la API'
+                      : `No hay productos en la categoría "${filtroCategoriaGestor}"`}
+                  </div>
                 )}
               </div>
             </>
@@ -2567,8 +2649,26 @@ function App() {
           {/* Contenido de Agregados */}
           {pestañaActiva === 'agregados' && (
             <div className="gestor-agregados">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 className="gestor-section-title" style={{ marginBottom: 0 }}>Gestor de Agregados</h3>
+              <div className="gestor-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div className="gestor-vista-buttons">
+                  <span className="gestor-filtros-label" style={{ marginBottom: 0, marginRight: '10px' }}>Vista:</span>
+                  <button
+                    type="button"
+                    className={`gestor-filtro-btn ${vistaAgregadosGestor === 'mosaico' ? 'active' : ''}`}
+                    onClick={() => setVistaAgregadosGestor('mosaico')}
+                    title="Vista mosaico"
+                  >
+                    <i className="fa-solid fa-border-all"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className={`gestor-filtro-btn ${vistaAgregadosGestor === 'lista' ? 'active' : ''}`}
+                    onClick={() => setVistaAgregadosGestor('lista')}
+                    title="Vista lista"
+                  >
+                    <i className="fa-solid fa-list"></i>
+                  </button>
+                </div>
                 <button
                   className="btn-crear-producto"
                   onClick={handleCrearAgregado}
@@ -2581,12 +2681,36 @@ function App() {
                 <div className="gestor-loading">Cargando agregados...</div>
               ) : (
                 <>
+                  <div className="gestor-filtros">
+                    <span className="gestor-filtros-label">Filtrar por tipo:</span>
+                    <div className="gestor-filtros-buttons">
+                      {['Todos', 'Básicos', 'Premium'].map((tipo) => {
+                        const cantidad = tipo === 'Todos'
+                          ? agregadosAPI.length
+                          : tipo === 'Básicos'
+                            ? agregadosAPI.filter(a => a.categoria === 'Agregados Básicos').length
+                            : agregadosAPI.filter(a => a.categoria === 'Agregados Premium').length
+                        return (
+                          <button
+                            key={tipo}
+                            type="button"
+                            className={`gestor-filtro-btn ${filtroAgregadosGestor === tipo ? 'active' : ''}`}
+                            onClick={() => setFiltroAgregadosGestor(tipo)}
+                          >
+                            {tipo} ({cantidad})
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
                   {/* Agregados Básicos */}
+                  {(filtroAgregadosGestor === 'Todos' || filtroAgregadosGestor === 'Básicos') && (
                   <div className="agregados-section-gestor">
                     <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
                       Agregados Básicos ({agregadosAPI.filter(a => a.categoria === 'Agregados Básicos').length})
                     </h4>
-                    <div className="agregados-grid-gestor">
+                    <div className={`agregados-grid-gestor ${vistaAgregadosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
                       {agregadosAPI.filter(a => a.categoria === 'Agregados Básicos').map((agregado) => (
                         <div key={agregado.id} className="agregado-card-gestor">
                           <div className="agregado-header-gestor">
@@ -2629,13 +2753,15 @@ function App() {
                       ))}
                     </div>
                   </div>
+                  )}
 
                   {/* Agregados Premium */}
-                  <div className="agregados-section-gestor" style={{ marginTop: '30px' }}>
+                  {(filtroAgregadosGestor === 'Todos' || filtroAgregadosGestor === 'Premium') && (
+                  <div className="agregados-section-gestor" style={{ marginTop: filtroAgregadosGestor === 'Todos' ? '30px' : 0 }}>
                     <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
                       Agregados Premium ({agregadosAPI.filter(a => a.categoria === 'Agregados Premium').length})
                     </h4>
-                    <div className="agregados-grid-gestor">
+                    <div className={`agregados-grid-gestor ${vistaAgregadosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
                       {agregadosAPI.filter(a => a.categoria === 'Agregados Premium').map((agregado) => (
                         <div key={agregado.id} className="agregado-card-gestor">
                           <div className="agregado-header-gestor">
@@ -2678,6 +2804,7 @@ function App() {
                       ))}
                     </div>
                   </div>
+                  )}
 
                   {agregadosAPI.length === 0 && (
                     <div className="gestor-empty">No hay agregados cargados desde la API</div>
@@ -2837,6 +2964,44 @@ function App() {
             )}
           </div>
 
+          {/* Sección Salchipapas */}
+          <div className="section-title">SALCHIPAPAS</div>
+          <div className="papas-grid">
+            {salchipapas.length > 0 ? (
+              salchipapas.map((salchipapa) => (
+              <div 
+                key={salchipapa.id} 
+                className="papa-card"
+                onClick={() => agregarProductoAlPedido(salchipapa as Producto)}
+                style={{
+                  backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${salchipapa.descripcion || getImagenChorrillana(salchipapa.id)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  color: 'white'
+                }}
+              >
+                <h5>{salchipapa.nombre.toUpperCase()}</h5>
+                <div className="size" style={{
+                  backgroundColor: 'rgba(255, 215, 0, 0.9)',
+                  color: '#000',
+                  padding: '3px 6px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '11px',
+                  display: 'inline-block',
+                  textShadow: 'none',
+                  border: '1px solid rgba(0,0,0,0.2)'
+                }}>{salchipapa.tamaño}</div>
+                <div className="price">{formatearPrecio(salchipapa.precio)}</div>
+              </div>
+              ))
+            ) : (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
+                No hay productos de esta categoría en la API
+              </div>
+            )}
+          </div>
+
           {/* Sección Bebestibles */}
           <div className="section-title">BEBESTIBLES</div>
           <div className="bebestibles-grid">
@@ -2906,21 +3071,25 @@ function App() {
               </div>
             ) : (
               pedidoActual.map((item) => {
-                // Detectar si es papa frita o chorrillana
+                // Detectar si es papa frita, chorrillana o salchipapa
                 const esPapaFritaPorId = item.producto.id.includes('papas_') || 
-                                          (item.producto.id.toLowerCase().includes('papa') && !item.producto.id.toLowerCase().includes('chorrillana'))
+                                          (item.producto.id.toLowerCase().includes('papa') && !item.producto.id.toLowerCase().includes('chorrillana') && !item.producto.id.toLowerCase().includes('salchipapa'))
                 const esChorrillanaPorId = item.producto.id.includes('chorrillana_') || 
                                             item.producto.id.toLowerCase().includes('chorrillana')
+                const esSalchipapaPorId = item.producto.id.includes('salchipapa_') || 
+                                           item.producto.id.toLowerCase().includes('salchipapa')
                 
                 const esPapaFrita = esPapaFritaPorId || papasFritas.some(p => p.id === item.producto.id)
                 const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === item.producto.id)
+                const esSalchipapa = esSalchipapaPorId || salchipapas.some(s => s.id === item.producto.id)
                 
                 // Verificar por categoría (para productos de la API)
                 const categoria = (item.producto as any).categoria?.toLowerCase() || ''
-                const esPapaFritaPorCategoria = categoria.includes('papa') && !categoria.includes('chorrillana')
-                const esChorrillanaPorCategoria = categoria.includes('chorrillana')
+                const esPapaFritaPorCategoria = categoria.includes('papa') && !categoria.includes('chorrillana') && !categoria.includes('salchipapa')
+                const esChorrillanaPorCategoria = categoria.includes('chorrillana') && !categoria.includes('salchipapa')
+                const esSalchipapaPorCategoria = categoria.includes('salchipapa')
                 
-                const esEditable = esPapaFrita || esChorrillana || esPapaFritaPorCategoria || esChorrillanaPorCategoria
+                const esEditable = esPapaFrita || esChorrillana || esSalchipapa || esPapaFritaPorCategoria || esChorrillanaPorCategoria || esSalchipapaPorCategoria
                 
                 return (
                 <div 
@@ -2935,10 +3104,12 @@ function App() {
                         ? `Papas Fritas ${getTamañoParaPedido(item.producto.tamaño || '')}` 
                         : esChorrillana
                         ? item.producto.nombre
+                        : esSalchipapa
+                        ? item.producto.nombre
                         : item.producto.nombre}
                     </h6>
                     <div className="item-details">
-                      {!esPapaFrita && !esChorrillana && item.producto.tamaño}
+                      {!esPapaFrita && !esChorrillana && !esSalchipapa && item.producto.tamaño}
                       {item.agregados.length > 0 && (
                                                    <div className="agregados-list">
                             {item.agregados.map((agregado, index) => (

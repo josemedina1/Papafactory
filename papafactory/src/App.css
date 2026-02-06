@@ -353,6 +353,121 @@ body {
   margin-top: 30px;
 }
 
+/* Filtros por categoría en el Gestor */
+.gestor-filtros {
+  margin-bottom: 20px;
+}
+
+.gestor-filtros-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--papa-gray-dark);
+  margin-bottom: 10px;
+}
+
+.gestor-filtros-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gestor-filtro-btn {
+  padding: 8px 14px;
+  border: 2px solid var(--papa-border);
+  border-radius: 8px;
+  background: var(--papa-white);
+  color: var(--papa-gray-dark);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gestor-filtro-btn:hover {
+  border-color: var(--papa-yellow);
+  background: var(--papa-yellow-light);
+}
+
+.gestor-filtro-btn.active {
+  border-color: var(--papa-yellow);
+  background: var(--papa-yellow);
+  color: var(--papa-black);
+}
+
+.gestor-vista-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Vista lista: una columna y tarjetas en formato fila */
+.productos-grid.gestor-vista-lista,
+.agregados-grid-gestor.gestor-vista-lista {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.productos-grid.gestor-vista-lista .producto-card-gestor,
+.agregados-grid-gestor.gestor-vista-lista .agregado-card-gestor {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 16px;
+}
+
+.productos-grid.gestor-vista-lista .producto-header-gestor,
+.agregados-grid-gestor.gestor-vista-lista .agregado-header-gestor {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.productos-grid.gestor-vista-lista .producto-info-gestor,
+.agregados-grid-gestor.gestor-vista-lista .agregado-info-gestor {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.productos-grid.gestor-vista-lista .producto-imagen {
+  max-height: 60px;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.productos-grid.gestor-vista-lista .producto-detail {
+  margin: 0;
+}
+
+.productos-grid.gestor-vista-lista .producto-actions {
+  margin-top: 0;
+  margin-left: auto;
+  padding-top: 0;
+  border-top: none;
+}
+
+.agregados-grid-gestor.gestor-vista-lista .agregado-precios {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agregados-grid-gestor.gestor-vista-lista .producto-actions {
+  margin-top: 0;
+  margin-left: auto;
+  padding-top: 0;
+  border-top: none;
+}
+
 .gestor-section-title {
   font-size: 20px;
   font-weight: bold;
@@ -853,6 +968,198 @@ body {
   
   .extras-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Gestor - versión móvil */
+  .gestor-container {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .gestor-header {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+    align-items: stretch;
+  }
+
+  .gestor-title {
+    font-size: 20px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .gestor-menu {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .gestor-menu .btn-volver,
+  .gestor-menu .btn-cerrar-sesion {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .gestor-content {
+    padding: 16px;
+  }
+
+  .gestor-subtitle {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .gestor-tabs {
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--papa-border);
+  }
+
+  .gestor-tab {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .gestor-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+  }
+
+  .stat-value {
+    font-size: 26px;
+  }
+
+  .gestor-productos .gestor-section-title,
+  .gestor-agregados .gestor-section-title {
+    font-size: 16px;
+  }
+
+  /* Fila título + botón "Nuevo" en una columna en móvil */
+  .gestor-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .btn-crear-producto {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  .productos-grid,
+  .agregados-grid-gestor {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .producto-card-gestor,
+  .agregado-card-gestor {
+    padding: 16px;
+  }
+
+  .producto-header-gestor {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .producto-nombre-gestor {
+    font-size: 16px;
+  }
+
+  .producto-precio-gestor {
+    font-size: 16px;
+    padding: 4px 10px;
+  }
+
+  .producto-actions {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .producto-actions .btn-editar,
+  .producto-actions .btn-eliminar {
+    width: 100%;
+  }
+
+  .agregado-nombre-gestor {
+    font-size: 16px;
+  }
+
+  .agregados-section-gestor h4 {
+    font-size: 16px !important;
+  }
+
+  .gestor-loading,
+  .gestor-empty {
+    padding: 24px 16px;
+    font-size: 15px;
+  }
+
+  .gestor-filtros {
+    margin-bottom: 16px;
+  }
+
+  .gestor-filtros-label {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .gestor-filtros-buttons {
+    gap: 6px;
+  }
+
+  .gestor-filtro-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .gestor-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .gestor-vista-buttons {
+    justify-content: flex-start;
+  }
+}
+
+/* Gestor - móvil muy pequeño */
+@media (max-width: 480px) {
+  .gestor-title {
+    font-size: 18px;
+  }
+
+  .gestor-tab {
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+
+  .gestor-content {
+    padding: 12px;
+  }
+
+  .producto-card-gestor,
+  .agregado-card-gestor {
+    padding: 12px;
   }
 }
 
