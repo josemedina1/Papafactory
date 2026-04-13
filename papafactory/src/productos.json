@@ -7,21 +7,21 @@
           "id": "papas_m",
           "nombre": "Papas Fritas M",
           "tamaño": "M",
-          "precio": 3500,
+          "precio": 4000,
           "moneda": "CLP"
         },
         {
           "id": "papas_l",
           "nombre": "Papas Fritas L",
           "tamaño": "L",
-          "precio": 4000,
+          "precio": 4500,
           "moneda": "CLP"
         },
         {
           "id": "papas_xl",
           "nombre": "Papas Fritas XL",
           "tamaño": "XL",
-          "precio": 4500,
+          "precio": 5000,
           "moneda": "CLP"
         }
       ]
@@ -33,21 +33,47 @@
           "id": "chorrillana_m",
           "nombre": "Papa Chorrillana M",
           "tamaño": "M",
-          "precio": 7200,
+          "precio": 7700,
           "moneda": "CLP"
         },
         {
           "id": "chorrillana_l",
           "nombre": "Papa Chorrillana L",
           "tamaño": "L",
-          "precio": 8500,
+          "precio": 8800,
           "moneda": "CLP"
         },
         {
           "id": "chorrillana_xl",
           "nombre": "Papa Chorrillana XL",
           "tamaño": "XL",
-          "precio": 9700,
+          "precio": 10200,
+          "moneda": "CLP"
+        }
+      ]
+    },
+    "salchipapas": {
+      "categoria": "Salchipapas",
+      "items": [
+        {
+          "id": "salchipapa_m",
+          "nombre": "Salchipapa M",
+          "tamaño": "M",
+          "precio": 4800,
+          "moneda": "CLP"
+        },
+        {
+          "id": "salchipapa_l",
+          "nombre": "Salchipapa L",
+          "tamaño": "L",
+          "precio": 5300,
+          "moneda": "CLP"
+        },
+        {
+          "id": "salchipapa_xl",
+          "nombre": "Salchipapa XL",
+          "tamaño": "XL",
+          "precio": 5900,
           "moneda": "CLP"
         }
       ]
@@ -55,9 +81,9 @@
     "agregados_basicos": {
       "categoria": "Agregados Básicos",
       "precios_por_tamaño": {
-        "M": 800,
-        "L": 1000,
-        "XL": 1200
+        "M": 900,
+        "L": 1100,
+        "XL": 1300
       },
       "items": [
         "Ají verde encurtido",
@@ -75,9 +101,9 @@
     "agregados_premium": {
       "categoria": "Agregados Premium",
       "precios_por_tamaño": {
-        "M": 1200,
-        "L": 1400,
-        "XL": 1600
+        "M": 1300,
+        "L": 1500,
+        "XL": 1700
       },
       "items": [
         "Carne mechada",
@@ -135,6 +161,13 @@
           "tamaño": "500ml",
           "precio": 1500,
           "moneda": "CLP"
+        },
+        {
+          "id": "jugo_pulpa_500ml",
+          "nombre": "Jugo Pulpa",
+          "tamaño": "500ml",
+          "precio": 2000,
+          "moneda": "CLP"
         }
       ]
     },
@@ -168,6 +201,6 @@
   "configuracion": {
     "moneda_base": "CLP",
     "iva": 19,
-    "fecha_actualizacion": "2024-12-20"
+    "fecha_actualizacion": "2026-04-13"
   }
 } 

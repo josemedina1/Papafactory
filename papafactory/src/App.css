@@ -736,21 +736,49 @@ body {
   background: var(--papa-white);
   border: 2px solid var(--papa-yellow);
   border-radius: 8px;
-  padding: 10px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  height: 90px;
+  height: 120px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   max-width: 220px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .bebida-card:hover {
   border-color: var(--papa-yellow-dark);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.bebida-card-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: -2;
+}
+
+.bebida-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.62));
+  z-index: -1;
+}
+
+.bebida-card-content {
+  height: 100%;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .bebida-card h6 {

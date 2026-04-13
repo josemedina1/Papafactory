@@ -1028,6 +1028,28 @@ function App() {
     return null
   }
 
+  const obtenerAgregadosLocalesDesdeJSON = (): AgregadoAPI[] => {
+    const agregadosBasicosLocales = (productos.productos.agregados_basicos.items as string[]).map((item, index) => ({
+      id: `local-basico-${index}`,
+      item,
+      categoria: productos.productos.agregados_basicos.categoria,
+      precioM: productos.productos.agregados_basicos.precios_por_tamaño.M,
+      precioL: productos.productos.agregados_basicos.precios_por_tamaño.L,
+      precioXL: productos.productos.agregados_basicos.precios_por_tamaño.XL
+    }))
+
+    const agregadosPremiumLocales = (productos.productos.agregados_premium.items as string[]).map((item, index) => ({
+      id: `local-premium-${index}`,
+      item,
+      categoria: productos.productos.agregados_premium.categoria,
+      precioM: productos.productos.agregados_premium.precios_por_tamaño.M,
+      precioL: productos.productos.agregados_premium.precios_por_tamaño.L,
+      precioXL: productos.productos.agregados_premium.precios_por_tamaño.XL
+    }))
+
+    return [...agregadosBasicosLocales, ...agregadosPremiumLocales]
+  }
+
   const mapProductoAPIToProducto = (p: ProductoAPI): Producto => ({
     id: p.id,
     nombre: p.nombre,
@@ -1101,9 +1123,17 @@ function App() {
     } catch (error) {
       console.error('Error al cargar productos desde la API:', error)
       // En caso de error, usar datos locales como fallback
+      const productosLocales = [
+        ...(productos.productos.papas_fritas.items as Producto[]),
+        ...(productos.productos.chorrillanas.items as Producto[]),
+        ...(productos.productos.salchipapas.items as Producto[]),
+        ...(productos.productos.bebidas.items as Producto[]),
+        ...(productos.productos.extras.items as Producto[])
+      ]
+      setTodosLosProductosAPI(productosLocales)
       setPapasFritas(productos.productos.papas_fritas.items as Producto[])
       setChorrillanas(productos.productos.chorrillanas.items as Producto[])
-      setSalchipapas([])
+      setSalchipapas(productos.productos.salchipapas.items as Producto[])
       setBebidas(productos.productos.bebidas.items as Producto[])
       setExtras(productos.productos.extras.items as Producto[])
     } finally {
@@ -1115,15 +1145,17 @@ function App() {
   const cargarAgregadosDesdeAPI = async () => {
     try {
       setCargandoAgregados(true)
-      const response = await fetch(API_URL_AGREGADOS)
+      const response = await fetch(`${API_URL_AGREGADOS}?t=${Date.now()}`, {
+        cache: 'no-store'
+      })
       if (!response.ok) {
         throw new Error('Error al cargar agregados desde la API')
       }
       const agregados: AgregadoAPI[] = await response.json()
-      setAgregadosAPI(agregados)
+      setAgregadosAPI(agregados.length > 0 ? agregados : obtenerAgregadosLocalesDesdeJSON())
     } catch (error) {
       console.error('Error al cargar agregados desde la API:', error)
-      setAgregadosAPI([])
+      setAgregadosAPI(obtenerAgregadosLocalesDesdeJSON())
     } finally {
       setCargandoAgregados(false)
     }
@@ -1624,26 +1656,24 @@ function App() {
   }
 
   const agregarProductoAlPedido = (producto: Producto) => {
-    // Detectar si es papa frita, chorrillana o salchipapa
-    // Verificar primero por ID (para compatibilidad con datos locales)
+    const categoriaNormalizada = normalizarCategoriaParaFiltro(producto.categoria)
+
     const esPapaFritaPorId = producto.id.includes('papas_') || 
                               (producto.id.toLowerCase().includes('papa') && !producto.id.toLowerCase().includes('chorrillana') && !producto.id.toLowerCase().includes('salchipapa'))
     const esChorrillanaPorId = producto.id.includes('chorrillana_') || 
                                 producto.id.toLowerCase().includes('chorrillana')
     const esSalchipapaPorId = producto.id.includes('salchipapa_') || 
                                producto.id.toLowerCase().includes('salchipapa')
+
+    const esPapaFrita = categoriaNormalizada === 'Papas Fritas' || esPapaFritaPorId || papasFritas.some(p => p.id === producto.id)
+    const esChorrillana = categoriaNormalizada === 'Chorrillanas' || esChorrillanaPorId || chorrillanas.some(c => c.id === producto.id)
+    const esSalchipapa = categoriaNormalizada === 'Salchipapas' || esSalchipapaPorId || salchipapas.some(s => s.id === producto.id)
     
-    // Verificar si está en los arrays de productos cargados desde la API
-    const esPapaFrita = esPapaFritaPorId || papasFritas.some(p => p.id === producto.id)
-    const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === producto.id)
-    const esSalchipapa = esSalchipapaPorId || salchipapas.some(s => s.id === producto.id)
-    
-    // Si es una papa frita, chorrillana o salchipapa, abrir modal de agregados
-    if (esPapaFrita || esChorrillana || esSalchipapa) {
-      // Crear el item inmediatamente en el pedido
+    const esAgregable = esPapaFrita || esChorrillana || esSalchipapa
+    if (esAgregable) {
       const nuevoItem: ItemPedido = {
         id: `${producto.id}-${Date.now()}`,
-        tipo: esPapaFrita ? 'papa' : 'chorrillana',
+        tipo: esPapaFrita || esSalchipapa ? 'papa' : 'chorrillana',
         producto: producto,
         agregados: [],
         cantidad: 1,
@@ -1657,7 +1687,6 @@ function App() {
       return
     }
 
-    // Para bebestibles y extras, agregar directamente
     const nuevoItem: ItemPedido = {
       id: `${producto.id}-${Date.now()}`,
       tipo: producto.id.includes('agua_') || producto.id.includes('bebida_') || producto.id.includes('red_bull') || producto.id.includes('score_') || producto.id.includes('jugo_') ? 'bebida' : 'extra',
@@ -2378,19 +2407,21 @@ function App() {
   const getImagenBebida = (id: string) => {
     switch(id) {
       case 'agua_mineral_500ml':
-        return 'https://www.meshi.cl/wp-content/uploads/2024/07/como-e-feito-o-envase-de-agua-mineral.jpg'
+        return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_32wkjAywb9XJupRHlYjNA89buxvW2UV8uA&s'
       case 'bebida_lata_350ml':
-        return 'https://delivery.pwcc.cl/wp-content/uploads/2020/08/Bebidas.png'
+        return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9iPjszyw-J2YSBNx0qSMd71M5qCxaQ8_R8Q&s'
       case 'red_bull_250ml':
-        return 'https://santaisabel.vtexassets.com/arquivos/ids/496384/Bebida-Energetica-Red-Bull-Tradicional-Lata-355-ml.jpg?v=638814648562030000'
+        return 'https://allnutrition.cl/cdn/shop/files/s272003-4box-0-0e8c2b92-cc01-4048-b9ca-038b2253ab8a_9fce1863-5e03-4e89-9a84-194b15707f94.png?v=1736163883'
       case 'bebida_botella_591ml':
-        return 'https://socomepcl.cl/wp-content/uploads/2022/10/CCU-ZERO-PET-500CC-VARIEDADES.jpg'
+        return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDdrc1zQeoaBbG03NiaSQokj0tGh0DDHLZyA&s'
       case 'score_energetica_500ml':
         return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSr9OhfgjLzBt0ercTKtGdYAao1_Io7vIXWkg&s'
       case 'jugo_botella_300ml':
         return 'https://d1ks0wbvjr3pux.cloudfront.net/4dfd13fa-8b39-4b79-9fe5-ff4d72fd04f1-md.jpg'
+      case 'jugo_pulpa_500ml':
+        return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA8InZUrf7tDU0OYwCCIfFKVUzAvuq4f-MkQ&s'
       default:
-        return 'https://www.meshi.cl/wp-content/uploads/2024/07/como-e-feito-o-envase-de-agua-mineral.jpg'
+        return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_32wkjAywb9XJupRHlYjNA89buxvW2UV8uA&s'
     }
   }
 
@@ -3034,16 +3065,21 @@ function App() {
                 key={bebida.id} 
                 className="bebida-card"
                 onClick={() => agregarProductoAlPedido(bebida as Producto)}
-                style={{
-                  backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${bebida.descripcion || getImagenBebida(bebida.id)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  color: 'white'
-                }}
               >
-                <h6>{bebida.nombre}</h6>
-                <div className="size">{bebida.tamaño}</div>
-                <div className="price">{formatearPrecio(bebida.precio)}</div>
+                <img
+                  className="bebida-card-image"
+                  src={getImagenBebida(bebida.id) || bebida.descripcion}
+                  alt={bebida.nombre}
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).src = bebida.descripcion || getImagenBebida(bebida.id)
+                  }}
+                />
+                <div className="bebida-card-overlay"></div>
+                <div className="bebida-card-content">
+                  <h6>{bebida.nombre}</h6>
+                  <div className="size">{bebida.tamaño}</div>
+                  <div className="price">{formatearPrecio(bebida.precio)}</div>
+                </div>
               </div>
               ))
             ) : (
