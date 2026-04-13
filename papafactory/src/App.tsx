@@ -3,6 +3,13 @@ import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
 
+// API URLs - Comentados temporalmente mientras se configura MockAPI
+// Para usar una API real, reemplaza con tus endpoints reales
+// const API_URL = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Productos'
+// const API_URL_AGREGADOS = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Agregados'
+
+// CONFIGURACIÓN: Cambiar USE_LOCAL_DATA a false para usar API real cuando esté lista
+const USE_LOCAL_DATA = true
 const API_URL = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Productos'
 const API_URL_AGREGADOS = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Agregados'
 
@@ -10,7 +17,7 @@ interface ProductoAPI {
   id: string;
   nombre: string;
   tamano: string;
-  precio: number;
+  precio?: number;
   moneda: string;
   categoria: string;
   imagen_producto?: string;
@@ -58,6 +65,7 @@ function ModalAgregados({
   const esSalchipapa = producto.id.includes('salchipapa_') || producto.id.toLowerCase().includes('salchipapa') || ((producto as any).categoria?.toLowerCase() || '').includes('salchipapa');
 
   const formatearPrecio = (precio: number): string => {
+    if (isNaN(precio)) return '$0'
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP'
@@ -279,7 +287,7 @@ function ModalProductoCRUD({
       // Si tenemos el producto completo desde la API, usar esos datos
       setNombre(productoCompleto.nombre)
       setTamano(productoCompleto.tamano)
-      setPrecioStr(productoCompleto.precio != null ? String(productoCompleto.precio) : '')
+      setPrecioStr(productoCompleto.precio !== undefined ? String(productoCompleto.precio) : '')
       // Normalizar la categoría para que coincida con las opciones del select
       const catNormalizada = normalizarCategoria(productoCompleto.categoria)
       setCategoria(catNormalizada)
@@ -288,7 +296,7 @@ function ModalProductoCRUD({
       // Si solo tenemos el producto básico, usar esos datos
       setNombre(producto.nombre)
       setTamano(producto.tamaño)
-      setPrecioStr(producto.precio != null ? String(producto.precio) : '')
+      setPrecioStr(producto.precio !== undefined ? String(producto.precio) : '')
       setCategoria('')
       setImagen_producto(producto.descripcion || '')
     } else {
@@ -331,9 +339,9 @@ function ModalProductoCRUD({
     setGuardando(true)
 
     try {
-      const precioNum = precioStr.trim() === '' ? NaN : parseFloat(precioStr.replace(',', '.'))
-      if (isNaN(precioNum) || precioNum < 0) {
-        setError('Ingrese un precio válido (solo números)')
+      const precioNum = precioStr.trim() === '' ? undefined : parseFloat(precioStr.replace(',', '.'))
+      if (precioNum !== undefined && (isNaN(precioNum) || precioNum < 0)) {
+        setError('Ingrese un precio válido (solo números positivos)')
         setGuardando(false)
         return
       }
@@ -346,6 +354,11 @@ function ModalProductoCRUD({
         moneda: 'CLP', // Siempre CLP (campo no mostrado en el formulario)
         categoria: categoria || 'Papas Fritas', // Usar la categoría seleccionada o Papas Fritas por defecto
         imagen_producto: imagen_producto || undefined
+      }
+
+      // Para edición, asegurar que tenemos un ID válido
+      if (producto && !productoData.id) {
+        productoData.id = producto.id
       }
 
       await onSave(productoData)
@@ -1054,7 +1067,7 @@ function App() {
     id: p.id,
     nombre: p.nombre,
     tamaño: p.tamano,
-    precio: Number(p.precio),
+    precio: p.precio !== undefined ? Number(p.precio) : 0,
     moneda: p.moneda,
     descripcion: p.imagen_producto,
     categoria: p.categoria
@@ -1111,6 +1124,25 @@ function App() {
   const cargarProductosDesdeAPI = async () => {
     try {
       setCargandoProductos(true)
+      
+      // Si USE_LOCAL_DATA está activo, usar solo datos locales
+      if (USE_LOCAL_DATA) {
+        const productosLocales = [
+          ...(productos.productos.papas_fritas.items as Producto[]),
+          ...(productos.productos.chorrillanas.items as Producto[]),
+          ...(productos.productos.salchipapas.items as Producto[]),
+          ...(productos.productos.bebidas.items as Producto[]),
+          ...(productos.productos.extras.items as Producto[])
+        ]
+        setTodosLosProductosAPI(productosLocales)
+        setPapasFritas(productos.productos.papas_fritas.items as Producto[])
+        setChorrillanas(productos.productos.chorrillanas.items as Producto[])
+        setSalchipapas(productos.productos.salchipapas.items as Producto[])
+        setBebidas(productos.productos.bebidas.items as Producto[])
+        setExtras(productos.productos.extras.items as Producto[])
+        return
+      }
+      
       const response = await fetch(`${API_URL}?t=${Date.now()}`, {
         cache: 'no-store'
       })
@@ -1145,6 +1177,13 @@ function App() {
   const cargarAgregadosDesdeAPI = async () => {
     try {
       setCargandoAgregados(true)
+      
+      // Si USE_LOCAL_DATA está activo, usar solo datos locales
+      if (USE_LOCAL_DATA) {
+        setAgregadosAPI(obtenerAgregadosLocalesDesdeJSON())
+        return
+      }
+      
       const response = await fetch(`${API_URL_AGREGADOS}?t=${Date.now()}`, {
         cache: 'no-store'
       })
@@ -1168,8 +1207,26 @@ function App() {
       setUsuarioAutenticado(true)
     }
     cargarHistorialPedidos()
-    cargarProductosDesdeAPI()
-    cargarAgregadosDesdeAPI()
+    
+    // Cargar productos - siempre desde datos locales en este modo
+    const productosLocales = [
+      ...(productos.productos.papas_fritas.items as Producto[]),
+      ...(productos.productos.chorrillanas.items as Producto[]),
+      ...(productos.productos.salchipapas.items as Producto[]),
+      ...(productos.productos.bebidas.items as Producto[]),
+      ...(productos.productos.extras.items as Producto[])
+    ]
+    setTodosLosProductosAPI(productosLocales)
+    setPapasFritas(productos.productos.papas_fritas.items as Producto[])
+    setChorrillanas(productos.productos.chorrillanas.items as Producto[])
+    setSalchipapas(productos.productos.salchipapas.items as Producto[])
+    setBebidas(productos.productos.bebidas.items as Producto[])
+    setExtras(productos.productos.extras.items as Producto[])
+    setCargandoProductos(false)
+    
+    // Cargar agregados
+    setAgregadosAPI(obtenerAgregadosLocalesDesdeJSON())
+    setCargandoAgregados(false)
   }, [])
 
   // Función para iniciar sesión
@@ -1188,13 +1245,14 @@ function App() {
   // Funciones CRUD para productos
   const handleCrearProducto = () => {
     setProductoEditando(null)
+    setProductoCompletoEditando(null)
     setMostrarModalProducto(true)
   }
 
   const handleEditarProducto = async (producto: Producto) => {
     setProductoEditando(producto)
     setMostrarModalProducto(true)
-    
+
     // Obtener el producto completo desde la API para tener todos los datos (incluyendo categoría)
     try {
       const response = await fetch(`${API_URL}/${producto.id}?t=${Date.now()}`, {
@@ -1204,12 +1262,32 @@ function App() {
         const productoCompleto: ProductoAPI = await response.json()
         setProductoCompletoEditando(productoCompleto)
       } else {
-        // Si falla, usar el producto básico
-        setProductoCompletoEditando(null)
+        // Si falla, usar el producto básico y crear un producto completo simulado
+        console.warn('No se pudo obtener el producto completo desde la API, usando datos básicos')
+        const productoCompletoSimulado: ProductoAPI = {
+          id: producto.id,
+          nombre: producto.nombre,
+          tamano: producto.tamaño,
+          precio: producto.precio,
+          moneda: producto.moneda,
+          categoria: producto.categoria || 'Papas Fritas',
+          imagen_producto: producto.descripcion
+        }
+        setProductoCompletoEditando(productoCompletoSimulado)
       }
     } catch (error) {
       console.error('Error al cargar producto completo:', error)
-      setProductoCompletoEditando(null)
+      // Crear un producto completo simulado con los datos básicos disponibles
+      const productoCompletoSimulado: ProductoAPI = {
+        id: producto.id,
+        nombre: producto.nombre,
+        tamano: producto.tamaño,
+        precio: producto.precio,
+        moneda: producto.moneda,
+        categoria: producto.categoria || 'Papas Fritas',
+        imagen_producto: producto.descripcion
+      }
+      setProductoCompletoEditando(productoCompletoSimulado)
     }
   }
 
@@ -1219,6 +1297,13 @@ function App() {
     }
 
     try {
+      if (USE_LOCAL_DATA) {
+        // Eliminar del estado local
+        const productosActualizados = todosLosProductosAPI.filter(p => p.id !== id)
+        sincronizarProductosEnEstado(productosActualizados)
+        return
+      }
+
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE'
       })
@@ -1238,8 +1323,27 @@ function App() {
   const handleGuardarProducto = async (productoData: ProductoAPI) => {
     try {
       let productoGuardado: Producto | null = null
+      const esEdicion = !!productoEditando
 
-      if (productoData.id && productoEditando) {
+      if (USE_LOCAL_DATA) {
+        // Guardar en estado local
+        productoGuardado = mapProductoAPIToProducto(productoData)
+        
+        if (esEdicion) {
+          // Editar producto existente
+          const productosActualizados = todosLosProductosAPI.map((p) =>
+            p.id === productoData.id ? productoGuardado! : p
+          )
+          sincronizarProductosEnEstado(productosActualizados)
+        } else {
+          // Crear nuevo producto
+          sincronizarProductosEnEstado([...todosLosProductosAPI, productoGuardado])
+        }
+        return
+      }
+
+      // Código original para API real
+      if (esEdicion && productoData.id) {
         // Actualizar producto existente
         const response = await fetch(`${API_URL}/${productoData.id}`, {
           method: 'PUT',
@@ -1275,7 +1379,7 @@ function App() {
       }
 
       if (productoGuardado) {
-        const productosActualizados = productoEditando
+        const productosActualizados = esEdicion
           ? todosLosProductosAPI.map((producto) =>
               producto.id === productoGuardado!.id ? productoGuardado! : producto
             )
@@ -1309,6 +1413,13 @@ function App() {
     }
 
     try {
+      if (USE_LOCAL_DATA) {
+        // Eliminar del estado local
+        const agregadosActualizados = agregadosAPI.filter(a => a.id !== id)
+        setAgregadosAPI(agregadosActualizados)
+        return
+      }
+
       const response = await fetch(`${API_URL_AGREGADOS}/${id}`, {
         method: 'DELETE'
       })
@@ -1327,6 +1438,26 @@ function App() {
 
   const handleGuardarAgregado = async (agregadoData: AgregadoAPI) => {
     try {
+      if (USE_LOCAL_DATA) {
+        // Guardar en estado local
+        if (agregadoData.id && agregadoEditando) {
+          // Actualizar agregado existente
+          const agregadosActualizados = agregadosAPI.map(a =>
+            a.id === agregadoData.id ? agregadoData : a
+          )
+          setAgregadosAPI(agregadosActualizados)
+        } else {
+          // Crear nuevo agregado (generar ID)
+          const nuevoAgregado = {
+            ...agregadoData,
+            id: `agregado_${Date.now()}`
+          }
+          setAgregadosAPI([...agregadosAPI, nuevoAgregado])
+        }
+        return
+      }
+
+      // Código original para API real
       if (agregadoData.id && agregadoEditando) {
         // Actualizar agregado existente
         const response = await fetch(`${API_URL_AGREGADOS}/${agregadoData.id}`, {
@@ -1810,6 +1941,7 @@ function App() {
   }
 
   const formatearPrecio = (precio: number): string => {
+    if (isNaN(precio)) return '$0'
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP'
