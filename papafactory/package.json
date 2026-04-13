@@ -18,6 +18,7 @@
     "electron-build-force": "node build-force.js",
     "build-now": "node build-now.js",
     "build-admin": "node build-admin.js",
+    "build-exe": "node build-exe.js",
     "build-simple-exe": "node build-simple-exe.js",
     "create-icon": "node create-icon.js",
     "create-icon-simple": "node create-icon-simple.js",

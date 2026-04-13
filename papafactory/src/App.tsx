@@ -30,6 +30,7 @@ function ModalAgregados({
   show, 
   onClose, 
   producto, 
+  agregadosAPI,
   onAgregarAgregado,
   onDecrementarAgregado,
   agregadosExistentes = []
@@ -37,6 +38,7 @@ function ModalAgregados({
   show: boolean; 
   onClose: () => void; 
   producto: Producto | null;
+  agregadosAPI: AgregadoAPI[];
   onAgregarAgregado: (agregado: Agregado) => void;
   onDecrementarAgregado: (nombreAgregado: string) => void;
   agregadosExistentes?: AgregadoEnPedido[];
@@ -82,18 +84,31 @@ function ModalAgregados({
     }
   };
 
-  const getPrecioAgregado = (tamaño: string, tipo: 'basico' | 'premium'): number => {
-    if (tipo === 'basico') {
-      return productos.productos.agregados_basicos.precios_por_tamaño[tamaño as keyof typeof productos.productos.agregados_basicos.precios_por_tamaño];
-    } else {
-      return productos.productos.agregados_premium.precios_por_tamaño[tamaño as keyof typeof productos.productos.agregados_premium.precios_por_tamaño];
+  const agregadosBasicos = agregadosAPI.filter((agregado) => agregado.categoria === 'Agregados Básicos');
+  const agregadosPremium = agregadosAPI.filter((agregado) => agregado.categoria === 'Agregados Premium');
+
+  const getPrecioAgregado = (agregado: AgregadoAPI, tamaño: string): number => {
+    switch (tamaño) {
+      case 'M':
+        return agregado.precioM
+      case 'L':
+        return agregado.precioL
+      case 'XL':
+        return agregado.precioXL
+      default:
+        return agregado.precioM
     }
   };
 
   const handleCambiarCantidadAgregado = (nombreAgregado: string, cambio: number, tipo: 'basico' | 'premium') => {
     if (cambio > 0) {
       // Incrementar: agregar el agregado
-      const precio = getPrecioAgregado(gramajeSelecionado, tipo);
+      const agregadoSeleccionado = (tipo === 'basico' ? agregadosBasicos : agregadosPremium).find(
+        (agregado) => agregado.item === nombreAgregado
+      )
+      const precio = agregadoSeleccionado
+        ? getPrecioAgregado(agregadoSeleccionado, gramajeSelecionado)
+        : 0
       
       onAgregarAgregado({
         nombre: nombreAgregado,
@@ -146,16 +161,16 @@ function ModalAgregados({
             <div className="agregados-section">
               <h3>Agregados Básicos</h3>
               <div className="agregados-grid">
-                {productos.productos.agregados_basicos.items.map((agregado, index) => {
-                  const precio = getPrecioAgregado(gramajeSelecionado, 'basico');
-                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado);
+                {agregadosBasicos.map((agregado, index) => {
+                  const precio = getPrecioAgregado(agregado, gramajeSelecionado);
+                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item);
                   return (
                                          <div 
                        key={index} 
                        className={`agregado-item ${agregadoExistente ? 'active' : ''}`}
                      >
-                       <div className="agregado-info" onClick={() => handleAgregadoClick(agregado, precio, 'basico')}>
-                         <span className="agregado-nombre">{agregado}</span>
+                       <div className="agregado-info" onClick={() => handleAgregadoClick(agregado.item, precio, 'basico')}>
+                         <span className="agregado-nombre">{agregado.item}</span>
                          <span className="agregado-precio">{formatearPrecio(precio)}</span>
                        </div>
                        {agregadoExistente && (
@@ -164,7 +179,7 @@ function ModalAgregados({
                              className="btn-contador"
                              onClick={(e) => {
                                e.stopPropagation();
-                               handleCambiarCantidadAgregado(agregado, -1, 'basico');
+                               handleCambiarCantidadAgregado(agregado.item, -1, 'basico');
                              }}
                            >
                              -
@@ -174,7 +189,7 @@ function ModalAgregados({
                              className="btn-contador"
                              onClick={(e) => {
                                e.stopPropagation();
-                               handleCambiarCantidadAgregado(agregado, 1, 'basico');
+                               handleCambiarCantidadAgregado(agregado.item, 1, 'basico');
                              }}
                            >
                              +
@@ -190,16 +205,16 @@ function ModalAgregados({
             <div className="agregados-section">
               <h3>Agregados Premium</h3>
               <div className="agregados-grid">
-                {productos.productos.agregados_premium.items.map((agregado, index) => {
-                  const precio = getPrecioAgregado(gramajeSelecionado, 'premium');
-                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado);
+                {agregadosPremium.map((agregado, index) => {
+                  const precio = getPrecioAgregado(agregado, gramajeSelecionado);
+                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item);
                   return (
                                          <div 
                        key={index} 
                        className={`agregado-item ${agregadoExistente ? 'active' : ''}`}
                      >
-                       <div className="agregado-info" onClick={() => handleAgregadoClick(agregado, precio, 'premium')}>
-                         <span className="agregado-nombre">{agregado}</span>
+                       <div className="agregado-info" onClick={() => handleAgregadoClick(agregado.item, precio, 'premium')}>
+                         <span className="agregado-nombre">{agregado.item}</span>
                          <span className="agregado-precio">{formatearPrecio(precio)}</span>
                        </div>
                        {agregadoExistente && (
@@ -208,7 +223,7 @@ function ModalAgregados({
                              className="btn-contador"
                              onClick={(e) => {
                                e.stopPropagation();
-                               handleCambiarCantidadAgregado(agregado, -1, 'premium');
+                               handleCambiarCantidadAgregado(agregado.item, -1, 'premium');
                              }}
                            >
                              -
@@ -218,7 +233,7 @@ function ModalAgregados({
                              className="btn-contador"
                              onClick={(e) => {
                                e.stopPropagation();
-                               handleCambiarCantidadAgregado(agregado, 1, 'premium');
+                               handleCambiarCantidadAgregado(agregado.item, 1, 'premium');
                              }}
                            >
                              +
@@ -536,9 +551,9 @@ function ModalAgregadoCRUD({
 }) {
   const [item, setItem] = useState<string>('')
   const [categoria, setCategoria] = useState<string>('Agregados Básicos')
-  const [precioM, setPrecioM] = useState<number>(0)
-  const [precioL, setPrecioL] = useState<number>(0)
-  const [precioXL, setPrecioXL] = useState<number>(0)
+  const [precioMStr, setPrecioMStr] = useState<string>('')
+  const [precioLStr, setPrecioLStr] = useState<string>('')
+  const [precioXLStr, setPrecioXLStr] = useState<string>('')
   const [error, setError] = useState<string>('')
   const [guardando, setGuardando] = useState<boolean>(false)
 
@@ -546,15 +561,15 @@ function ModalAgregadoCRUD({
     if (agregado) {
       setItem(agregado.item)
       setCategoria(agregado.categoria)
-      setPrecioM(agregado.precioM)
-      setPrecioL(agregado.precioL)
-      setPrecioXL(agregado.precioXL)
+      setPrecioMStr(agregado.precioM != null ? String(agregado.precioM) : '')
+      setPrecioLStr(agregado.precioL != null ? String(agregado.precioL) : '')
+      setPrecioXLStr(agregado.precioXL != null ? String(agregado.precioXL) : '')
     } else {
       setItem('')
       setCategoria('Agregados Básicos')
-      setPrecioM(0)
-      setPrecioL(0)
-      setPrecioXL(0)
+      setPrecioMStr('')
+      setPrecioLStr('')
+      setPrecioXLStr('')
     }
   }, [agregado])
 
@@ -566,6 +581,20 @@ function ModalAgregadoCRUD({
     setGuardando(true)
 
     try {
+      const precioM = precioMStr.trim() === '' ? NaN : parseFloat(precioMStr.replace(',', '.'))
+      const precioL = precioLStr.trim() === '' ? NaN : parseFloat(precioLStr.replace(',', '.'))
+      const precioXL = precioXLStr.trim() === '' ? NaN : parseFloat(precioXLStr.replace(',', '.'))
+
+      if (
+        isNaN(precioM) || precioM < 0 ||
+        isNaN(precioL) || precioL < 0 ||
+        isNaN(precioXL) || precioXL < 0
+      ) {
+        setError('Ingrese precios válidos (solo números)')
+        setGuardando(false)
+        return
+      }
+
       const agregadoData: AgregadoAPI = {
         id: agregado?.id || '',
         item,
@@ -660,9 +689,13 @@ function ModalAgregadoCRUD({
                 Precio M *
               </label>
               <input
-                type="number"
-                value={precioM}
-                onChange={(e) => setPrecioM(parseFloat(e.target.value) || 0)}
+                type="text"
+                inputMode="numeric"
+                value={precioMStr}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === '' || /^\d*\.?\d*$/.test(val)) setPrecioMStr(val)
+                }}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -672,9 +705,6 @@ function ModalAgregadoCRUD({
                   boxSizing: 'border-box'
                 }}
                 placeholder="Ingrese el precio para tamaño M"
-                required
-                min="0"
-                step="0.01"
               />
             </div>
             <div style={{ marginBottom: '20px' }}>
@@ -682,9 +712,13 @@ function ModalAgregadoCRUD({
                 Precio L *
               </label>
               <input
-                type="number"
-                value={precioL}
-                onChange={(e) => setPrecioL(parseFloat(e.target.value) || 0)}
+                type="text"
+                inputMode="numeric"
+                value={precioLStr}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === '' || /^\d*\.?\d*$/.test(val)) setPrecioLStr(val)
+                }}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -694,9 +728,6 @@ function ModalAgregadoCRUD({
                   boxSizing: 'border-box'
                 }}
                 placeholder="Ingrese el precio para tamaño L"
-                required
-                min="0"
-                step="0.01"
               />
             </div>
             <div style={{ marginBottom: '20px' }}>
@@ -704,9 +735,13 @@ function ModalAgregadoCRUD({
                 Precio XL *
               </label>
               <input
-                type="number"
-                value={precioXL}
-                onChange={(e) => setPrecioXL(parseFloat(e.target.value) || 0)}
+                type="text"
+                inputMode="numeric"
+                value={precioXLStr}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === '' || /^\d*\.?\d*$/.test(val)) setPrecioXLStr(val)
+                }}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -716,9 +751,6 @@ function ModalAgregadoCRUD({
                   boxSizing: 'border-box'
                 }}
                 placeholder="Ingrese el precio para tamaño XL"
-                required
-                min="0"
-                step="0.01"
               />
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -996,6 +1028,57 @@ function App() {
     return null
   }
 
+  const mapProductoAPIToProducto = (p: ProductoAPI): Producto => ({
+    id: p.id,
+    nombre: p.nombre,
+    tamaño: p.tamano,
+    precio: Number(p.precio),
+    moneda: p.moneda,
+    descripcion: p.imagen_producto,
+    categoria: p.categoria
+  })
+
+  const sincronizarProductosEnEstado = (productosActualizados: Producto[]) => {
+    setTodosLosProductosAPI(productosActualizados)
+
+    const papasFiltradas = productosActualizados.filter(
+      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Papas Fritas'
+    )
+    const chorrillanasFiltradas = productosActualizados.filter(
+      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Chorrillanas'
+    )
+    const salchipapasFiltradas = productosActualizados.filter(
+      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Salchipapas'
+    )
+    const bebidasFiltradas = productosActualizados.filter(
+      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Bebestibles'
+    )
+    const extrasFiltradas = productosActualizados.filter(
+      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Extras'
+    )
+
+    if (
+      papasFiltradas.length === 0 &&
+      chorrillanasFiltradas.length === 0 &&
+      salchipapasFiltradas.length === 0 &&
+      bebidasFiltradas.length === 0 &&
+      extrasFiltradas.length === 0
+    ) {
+      setPapasFritas(productosActualizados)
+      setChorrillanas([])
+      setSalchipapas([])
+      setBebidas([])
+      setExtras([])
+      return
+    }
+
+    setPapasFritas(papasFiltradas)
+    setChorrillanas(chorrillanasFiltradas)
+    setSalchipapas(salchipapasFiltradas)
+    setBebidas(bebidasFiltradas)
+    setExtras(extrasFiltradas)
+  }
+
   // Estados para agregados desde la API
   const [agregadosAPI, setAgregadosAPI] = useState<AgregadoAPI[]>([])
   const [cargandoAgregados, setCargandoAgregados] = useState<boolean>(true)
@@ -1006,117 +1089,15 @@ function App() {
   const cargarProductosDesdeAPI = async () => {
     try {
       setCargandoProductos(true)
-      const response = await fetch(API_URL)
+      const response = await fetch(`${API_URL}?t=${Date.now()}`, {
+        cache: 'no-store'
+      })
       if (!response.ok) {
         throw new Error('Error al cargar productos desde la API')
       }
       const productosAPI: ProductoAPI[] = await response.json()
 
-      // Convertir todos los productos al formato interno (tamano -> tamaño)
-      const productosConvertidos: Producto[] = productosAPI.map(p => ({
-        id: p.id,
-        nombre: p.nombre,
-        tamaño: p.tamano,
-        precio: p.precio,
-        moneda: p.moneda,
-        descripcion: p.imagen_producto,
-        categoria: p.categoria
-      }))
-
-      // Guardar todos los productos de la API (sin filtrar)
-      setTodosLosProductosAPI(productosConvertidos)
-
-      // Filtrar por categoría para uso en la página principal
-      // Primero intentar filtrar por categoría exacta, si no hay resultados, mostrar todos
-      const papasFiltradas = productosAPI
-        .filter(p => {
-          const cat = p.categoria?.toLowerCase() || ''
-          return (cat.includes('papa') && !cat.includes('chorrillana') && !cat.includes('salchipapa')) || 
-                 p.categoria === 'Papas Fritas' || 
-                 p.categoria === 'papas fritas'
-        })
-        .map(p => ({
-          id: p.id,
-          nombre: p.nombre,
-          tamaño: p.tamano,
-          precio: p.precio,
-          moneda: p.moneda,
-          descripcion: p.imagen_producto
-        }))
-      
-      const chorrillanasFiltradas = productosAPI
-        .filter(p => {
-          const cat = p.categoria?.toLowerCase() || ''
-          return (cat.includes('chorrillana') && !cat.includes('salchipapa')) || p.categoria === 'Chorrillanas'
-        })
-        .map(p => ({
-          id: p.id,
-          nombre: p.nombre,
-          tamaño: p.tamano,
-          precio: p.precio,
-          moneda: p.moneda,
-          descripcion: p.imagen_producto
-        }))
-      
-      const salchipapasFiltradas = productosAPI
-        .filter(p => {
-          const cat = p.categoria?.toLowerCase() || ''
-          return cat.includes('salchipapa') || p.categoria === 'Salchipapas' || p.categoria === 'Salchipapa'
-        })
-        .map(p => ({
-          id: p.id,
-          nombre: p.nombre,
-          tamaño: p.tamano,
-          precio: p.precio,
-          moneda: p.moneda,
-          descripcion: p.imagen_producto
-        }))
-      
-      const bebidasFiltradas = productosAPI
-        .filter(p => {
-          const cat = p.categoria?.toLowerCase() || ''
-          return cat.includes('bebida') || cat.includes('bebestible') || 
-                 p.categoria === 'Bebestibles' || p.categoria === 'Bebidas'
-        })
-        .map(p => ({
-          id: p.id,
-          nombre: p.nombre,
-          tamaño: p.tamano,
-          precio: p.precio,
-          moneda: p.moneda,
-          descripcion: p.imagen_producto
-        }))
-      
-      const extrasFiltradas = productosAPI
-        .filter(p => {
-          const cat = p.categoria?.toLowerCase() || ''
-          return cat.includes('extra') || p.categoria === 'Extras'
-        })
-        .map(p => ({
-          id: p.id,
-          nombre: p.nombre,
-          tamaño: p.tamano,
-          precio: p.precio,
-          moneda: p.moneda,
-          descripcion: p.imagen_producto
-        }))
-      
-      // Si no hay productos filtrados, mostrar todos los productos en papas fritas como fallback
-      if (papasFiltradas.length === 0 && chorrillanasFiltradas.length === 0 && 
-          salchipapasFiltradas.length === 0 && bebidasFiltradas.length === 0 && extrasFiltradas.length === 0) {
-        // Si no hay productos que coincidan, mostrar todos en papas fritas para que se vean
-        setPapasFritas(productosConvertidos)
-        setChorrillanas([])
-        setSalchipapas([])
-        setBebidas([])
-        setExtras([])
-      } else {
-        setPapasFritas(papasFiltradas)
-        setChorrillanas(chorrillanasFiltradas)
-        setSalchipapas(salchipapasFiltradas)
-        setBebidas(bebidasFiltradas)
-        setExtras(extrasFiltradas)
-      }
+      sincronizarProductosEnEstado(productosAPI.map(mapProductoAPIToProducto))
     } catch (error) {
       console.error('Error al cargar productos desde la API:', error)
       // En caso de error, usar datos locales como fallback
@@ -1184,7 +1165,9 @@ function App() {
     
     // Obtener el producto completo desde la API para tener todos los datos (incluyendo categoría)
     try {
-      const response = await fetch(`${API_URL}/${producto.id}`)
+      const response = await fetch(`${API_URL}/${producto.id}?t=${Date.now()}`, {
+        cache: 'no-store'
+      })
       if (response.ok) {
         const productoCompleto: ProductoAPI = await response.json()
         setProductoCompletoEditando(productoCompleto)
@@ -1222,6 +1205,8 @@ function App() {
 
   const handleGuardarProducto = async (productoData: ProductoAPI) => {
     try {
+      let productoGuardado: Producto | null = null
+
       if (productoData.id && productoEditando) {
         // Actualizar producto existente
         const response = await fetch(`${API_URL}/${productoData.id}`, {
@@ -1235,6 +1220,9 @@ function App() {
         if (!response.ok) {
           throw new Error('Error al actualizar el producto')
         }
+
+        const productoActualizado: ProductoAPI = await response.json()
+        productoGuardado = mapProductoAPIToProducto(productoActualizado)
       } else {
         // Crear nuevo producto
         const { id, ...productoSinId } = productoData
@@ -1249,9 +1237,22 @@ function App() {
         if (!response.ok) {
           throw new Error('Error al crear el producto')
         }
+
+        const productoCreado: ProductoAPI = await response.json()
+        productoGuardado = mapProductoAPIToProducto(productoCreado)
       }
 
-      // Recargar productos
+      if (productoGuardado) {
+        const productosActualizados = productoEditando
+          ? todosLosProductosAPI.map((producto) =>
+              producto.id === productoGuardado!.id ? productoGuardado! : producto
+            )
+          : [...todosLosProductosAPI, productoGuardado]
+
+        sincronizarProductosEnEstado(productosActualizados)
+      }
+
+      // Recargar productos desde la API sin caché para dejar el estado sincronizado
       await cargarProductosDesdeAPI()
     } catch (error) {
       console.error('Error al guardar producto:', error)
@@ -1480,13 +1481,20 @@ function App() {
   const mostrarAgregadosPorTipo = (tipo: 'basico' | 'premium') => {
     if (!tamañoSeleccionado) return
 
-    const tipoKey = tipo === 'basico' ? 'agregados_basicos' : 'agregados_premium'
-    const agregadosData = productos.productos[tipoKey]
-    const precio = agregadosData.precios_por_tamaño[tamañoSeleccionado as keyof typeof agregadosData.precios_por_tamaño]
-    
-    const agregados: Agregado[] = agregadosData.items.map((item: string) => ({
-      nombre: item,
-      precio: precio,
+    const agregadosFiltrados = agregadosAPI.filter((agregado) =>
+      tipo === 'basico'
+        ? agregado.categoria === 'Agregados Básicos'
+        : agregado.categoria === 'Agregados Premium'
+    )
+
+    const agregados: Agregado[] = agregadosFiltrados.map((item) => ({
+      nombre: item.item,
+      precio:
+        tamañoSeleccionado === 'L'
+          ? item.precioL
+          : tamañoSeleccionado === 'XL'
+          ? item.precioXL
+          : item.precioM,
       tamaño: tamañoSeleccionado,
       tipo: tipo
     }))
@@ -2432,6 +2440,21 @@ function App() {
   const cerrarModalAgregadosIndependientes = () => {
     setMostrarModalAgregadosIndependientes(false)
   }
+
+  const getPrecioAgregadoDesdeAPI = (agregado: AgregadoAPI, tamaño: string): number => {
+    switch (tamaño) {
+      case 'L':
+        return agregado.precioL
+      case 'XL':
+        return agregado.precioXL
+      case 'M':
+      default:
+        return agregado.precioM
+    }
+  }
+
+  const agregadosBasicosAPI = agregadosAPI.filter((agregado) => agregado.categoria === 'Agregados Básicos')
+  const agregadosPremiumAPI = agregadosAPI.filter((agregado) => agregado.categoria === 'Agregados Premium')
 
   const agregarAgregadoIndependiente = (agregado: Agregado) => {
     // Crear un producto temporal para el agregado independiente
@@ -3566,10 +3589,10 @@ function App() {
                     gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: '10px'
                   }}>
-                    {productos.productos.agregados_basicos.items.map((item, index) => {
-                      const precio = productos.productos.agregados_basicos.precios_por_tamaño[tamañoSeleccionado as keyof typeof productos.productos.agregados_basicos.precios_por_tamaño];
+                    {agregadosBasicosAPI.map((item, index) => {
+                      const precio = getPrecioAgregadoDesdeAPI(item, tamañoSeleccionado);
                       const agregado: Agregado = {
-                        nombre: item,
+                        nombre: item.item,
                         precio: precio,
                         tamaño: tamañoSeleccionado,
                         tipo: 'basico'
@@ -3610,7 +3633,7 @@ function App() {
                             color: '#333',
                             marginBottom: '5px'
                           }}>
-                            {item}
+                            {item.item}
                           </div>
                           <div style={{
                             fontSize: '14px',
@@ -3641,10 +3664,10 @@ function App() {
                     gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: '10px'
                   }}>
-                    {productos.productos.agregados_premium.items.map((item, index) => {
-                      const precio = productos.productos.agregados_premium.precios_por_tamaño[tamañoSeleccionado as keyof typeof productos.productos.agregados_premium.precios_por_tamaño];
+                    {agregadosPremiumAPI.map((item, index) => {
+                      const precio = getPrecioAgregadoDesdeAPI(item, tamañoSeleccionado);
                       const agregado: Agregado = {
-                        nombre: item,
+                        nombre: item.item,
                         precio: precio,
                         tamaño: tamañoSeleccionado,
                         tipo: 'premium'
@@ -3685,7 +3708,7 @@ function App() {
                             color: '#333',
                             marginBottom: '5px'
                           }}>
-                            {item}
+                            {item.item}
                           </div>
                           <div style={{
                             fontSize: '14px',
@@ -3714,6 +3737,7 @@ function App() {
           setItemEditandoId(null);
         }}
         producto={productoParaAgregados}
+        agregadosAPI={agregadosAPI}
         onAgregarAgregado={handleAgregarAgregado}
         onDecrementarAgregado={handleDecrementarAgregado}
         agregadosExistentes={itemEditandoId ? pedidoActual.find(item => item.id === itemEditandoId)?.agregados || [] : []}
