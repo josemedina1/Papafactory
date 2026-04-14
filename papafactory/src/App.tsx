@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
@@ -8,10 +8,128 @@ import productos from './productos.json'
 // const API_URL = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Productos'
 // const API_URL_AGREGADOS = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Agregados'
 
-// CONFIGURACIÓN: Cambiar USE_LOCAL_DATA a false para usar API real cuando esté lista
-const USE_LOCAL_DATA = true
-const API_URL = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Productos'
-const API_URL_AGREGADOS = 'https://6839d6ff6561b8d882b1e5de.mockapi.io/Agregados'
+// CONFIGURACIÓN: En producción/uso normal, mantener false para trabajar contra la API
+const USE_LOCAL_DATA = false
+// MockAPI usa el nombre del recurso en la URL; a veces es distinto en mayúsculas/minúsculas
+const MOCKAPI_BASE = 'https://6839d6ff6561b8d882b1e5de.mockapi.io'
+const API_URL = `${MOCKAPI_BASE}/Productos`
+const API_URL_AGREGADOS = `${MOCKAPI_BASE}/Agregados`
+
+const URLS_CANDIDATAS_PRODUCTOS = [`${MOCKAPI_BASE}/Productos`, `${MOCKAPI_BASE}/productos`]
+// Primero la URL exacta del proyecto (formato MockAPI estándar: array JSON en la raíz)
+const URLS_CANDIDATAS_AGREGADOS = [
+  API_URL_AGREGADOS,
+  `${MOCKAPI_BASE}/agregados`,
+  `${MOCKAPI_BASE}/AGREGADOS`
+]
+
+async function fetchJsonPrimeraUrlOk(urls: string[]): Promise<{ url: string; data: unknown }> {
+  let ultimoStatus = 0
+  for (const url of urls) {
+    const response = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' })
+    if (response.ok) {
+      const data = await response.json()
+      return { url, data }
+    }
+    ultimoStatus = response.status
+  }
+  throw new Error(`Ninguna URL respondió OK (último HTTP ${ultimoStatus}). Rutas probadas: ${urls.join(', ')}`)
+}
+
+function parseJsonAnidado(valor: unknown, maxDepth = 4): unknown {
+  let v = valor
+  for (let i = 0; i < maxDepth; i++) {
+    if (typeof v !== 'string') break
+    const t = v.trim()
+    if (!t.startsWith('[') && !t.startsWith('{')) break
+    try {
+      v = JSON.parse(t) as unknown
+    } catch {
+      break
+    }
+  }
+  return v
+}
+
+function clavesNormalizadas(o: Record<string, unknown>): Set<string> {
+  return new Set(Object.keys(o).map((k) => k.toLowerCase().replace(/[\s_-]/g, '')))
+}
+
+function objetoPareceFilaAgregado(x: unknown): boolean {
+  if (!x || typeof x !== 'object' || Array.isArray(x)) return false
+  const claves = clavesNormalizadas(x as Record<string, unknown>)
+  const tieneItem =
+    claves.has('item') || claves.has('nombre') || claves.has('name') || claves.has('title')
+  const tienePrecio =
+    claves.has('preciom') || claves.has('preciol') || claves.has('precioxl') || [...claves].some((k) => k.includes('precio'))
+  const tieneCategoria = claves.has('categoria') || claves.has('category')
+  return (tieneItem && tienePrecio) || (tieneItem && tieneCategoria) || (tienePrecio && tieneCategoria)
+}
+
+function extraerListaAgregadosDePayload(payload: unknown): unknown[] {
+  const raiz = parseJsonAnidado(payload)
+  if (raiz && typeof raiz === 'object' && !Array.isArray(raiz) && objetoPareceFilaAgregado(raiz)) {
+    return [raiz]
+  }
+  const anidar = ['items', 'data', 'mockData', '$mockData', 'result', 'results', 'body', 'records', 'rows', 'list', 'content', 'value']
+
+  const candidatos: unknown[] = [raiz]
+  if (raiz && typeof raiz === 'object' && !Array.isArray(raiz)) {
+    const o = raiz as Record<string, unknown>
+    for (const k of anidar) {
+      if (k in o) candidatos.push(o[k])
+    }
+  }
+
+  for (const c of candidatos) {
+    const p = parseJsonAnidado(c)
+    if (Array.isArray(p) && p.length > 0 && p.some(objetoPareceFilaAgregado)) {
+      return p
+    }
+  }
+
+  const visitados = new WeakSet<object>()
+  const arraysEncontrados: unknown[][] = []
+  const walk = (node: unknown, depth: number) => {
+    if (depth > 12 || node == null) return
+    if (typeof node !== 'object') return
+    if (visitados.has(node as object)) return
+    visitados.add(node as object)
+    if (Array.isArray(node)) {
+      if (node.length > 0 && node.every((el) => el !== null && typeof el === 'object')) {
+        arraysEncontrados.push(node as unknown[])
+      }
+      for (const el of node) walk(el, depth + 1)
+      return
+    }
+    for (const v of Object.values(node as Record<string, unknown>)) walk(v, depth + 1)
+  }
+  walk(raiz, 0)
+
+  let mejor: unknown[] = []
+  let mejorScore = -1
+  for (const arr of arraysEncontrados) {
+    const score = arr.filter(objetoPareceFilaAgregado).length
+    if (score > mejorScore) {
+      mejorScore = score
+      mejor = arr
+    }
+  }
+  return mejor
+}
+
+function leerCampoFlexible(o: Record<string, unknown>, aliases: string[]): unknown {
+  const mapa = new Map<string, unknown>()
+  for (const [k, v] of Object.entries(o)) {
+    mapa.set(k.toLowerCase().replace(/[\s_-]/g, ''), v)
+  }
+  const norm = (s: string) => s.toLowerCase().replace(/[\s_-]/g, '')
+  for (const a of aliases) {
+    const v = mapa.get(norm(a))
+    if (v !== undefined) return v
+  }
+  return undefined
+}
 
 interface ProductoAPI {
   id: string;
@@ -30,6 +148,36 @@ interface AgregadoAPI {
   precioM: number;
   precioL: number;
   precioXL: number;
+}
+
+type AgregadoApiPayload = {
+  item: string;
+  categoria: string;
+  precioM: number;
+  precioL: number;
+  precioXL: number;
+}
+
+function mapearRegistroAAgregadoAPI(reg: unknown, index: number): AgregadoAPI {
+  const o = (reg && typeof reg === 'object' ? reg : {}) as Record<string, unknown>
+  const idRaw = leerCampoFlexible(o, ['id', '_id'])
+  const itemRaw = leerCampoFlexible(o, ['item', 'nombre', 'name', 'title', 'label'])
+  const catRaw = leerCampoFlexible(o, ['categoria', 'category', 'tipo'])
+  const pM = leerCampoFlexible(o, ['precioM', 'precio_m', 'preciom'])
+  const pL = leerCampoFlexible(o, ['precioL', 'precio_l', 'prceioL', 'preciol'])
+  const pXL = leerCampoFlexible(o, ['precioXL', 'precio_xl', 'precioxl'])
+
+  const id = idRaw != null && String(idRaw).trim() !== '' ? String(idRaw).trim() : `tmp-${index}`
+  const item = itemRaw != null ? String(itemRaw).trim() : ''
+
+  return {
+    id,
+    item: item || `Agregado ${index + 1}`,
+    categoria: catRaw != null ? String(catRaw) : '',
+    precioM: Number(pM ?? 0),
+    precioL: Number(pL ?? 0),
+    precioXL: Number(pXL ?? 0)
+  }
 }
 
 // Componente Modal para agregados
@@ -1029,67 +1177,73 @@ function App() {
   const [vistaProductosGestor, setVistaProductosGestor] = useState<'mosaico' | 'lista'>('mosaico')
   const [vistaAgregadosGestor, setVistaAgregadosGestor] = useState<'mosaico' | 'lista'>('mosaico')
 
-  // Normaliza la categoría del producto al nombre del filtro (Chorrillana/Chorrillanas -> Chorrillanas, etc.)
-  const normalizarCategoriaParaFiltro = (categoria: string | undefined): string | null => {
-    if (!categoria) return null
-    const c = categoria.toLowerCase()
-    if (c.includes('chorrillana') && !c.includes('salchipapa')) return 'Chorrillanas'
-    if (c.includes('salchipapa')) return 'Salchipapas'
-    if ((c.includes('papa') || c.includes('papas')) && !c.includes('chorrillana') && !c.includes('salchipapa')) return 'Papas Fritas'
-    if (c.includes('bebida') || c.includes('bebestible')) return 'Bebestibles'
-    if (c.includes('extra')) return 'Extras'
+  // URL efectiva descubierta al cargar (MockAPI distingue mayúsculas en el path del recurso)
+  const productosApiRef = useRef<string>(API_URL)
+  const agregadosApiRef = useRef<string>(API_URL_AGREGADOS)
+
+  // Normaliza la categoría del producto al nombre del filtro (soporta variaciones de API)
+  const normalizarCategoriaParaFiltro = (
+    categoria: string | undefined,
+    nombreProducto?: string
+  ): string | null => {
+    const normalizarTexto = (valor: string): string =>
+      valor
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[_-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+    const c = categoria ? normalizarTexto(categoria) : ''
+    const n = nombreProducto ? normalizarTexto(nombreProducto) : ''
+    const texto = `${c} ${n}`.trim()
+
+    if (texto.includes('chorrillana') && !texto.includes('salchipapa')) return 'Chorrillanas'
+    if (texto.includes('salchipapa')) return 'Salchipapas'
+    if ((texto.includes('papa') || texto.includes('papas')) && !texto.includes('chorrillana') && !texto.includes('salchipapa')) return 'Papas Fritas'
+    if (texto.includes('bebida') || texto.includes('bebestible') || texto.includes('gaseosa') || texto.includes('jugo')) return 'Bebestibles'
+    if (texto.includes('extra') || texto.includes('aderezo') || texto.includes('salsa')) return 'Extras'
     return null
   }
 
-  const obtenerAgregadosLocalesDesdeJSON = (): AgregadoAPI[] => {
-    const agregadosBasicosLocales = (productos.productos.agregados_basicos.items as string[]).map((item, index) => ({
-      id: `local-basico-${index}`,
-      item,
-      categoria: productos.productos.agregados_basicos.categoria,
-      precioM: productos.productos.agregados_basicos.precios_por_tamaño.M,
-      precioL: productos.productos.agregados_basicos.precios_por_tamaño.L,
-      precioXL: productos.productos.agregados_basicos.precios_por_tamaño.XL
-    }))
+  const mapProductoAPIToProducto = (p: ProductoAPI): Producto => {
+    const raw = p as ProductoAPI & {
+      category?: string;
+      categoria_producto?: string;
+      tipo?: string;
+      imagen?: string;
+      image?: string;
+    }
 
-    const agregadosPremiumLocales = (productos.productos.agregados_premium.items as string[]).map((item, index) => ({
-      id: `local-premium-${index}`,
-      item,
-      categoria: productos.productos.agregados_premium.categoria,
-      precioM: productos.productos.agregados_premium.precios_por_tamaño.M,
-      precioL: productos.productos.agregados_premium.precios_por_tamaño.L,
-      precioXL: productos.productos.agregados_premium.precios_por_tamaño.XL
-    }))
-
-    return [...agregadosBasicosLocales, ...agregadosPremiumLocales]
+    return {
+      id: p.id,
+      nombre: p.nombre,
+      tamaño: p.tamano,
+      precio: p.precio !== undefined ? Number(p.precio) : 0,
+      moneda: p.moneda,
+      descripcion: p.imagen_producto || raw.imagen || raw.image,
+      categoria: p.categoria || raw.category || raw.categoria_producto || raw.tipo || ''
+    }
   }
-
-  const mapProductoAPIToProducto = (p: ProductoAPI): Producto => ({
-    id: p.id,
-    nombre: p.nombre,
-    tamaño: p.tamano,
-    precio: p.precio !== undefined ? Number(p.precio) : 0,
-    moneda: p.moneda,
-    descripcion: p.imagen_producto,
-    categoria: p.categoria
-  })
 
   const sincronizarProductosEnEstado = (productosActualizados: Producto[]) => {
     setTodosLosProductosAPI(productosActualizados)
 
     const papasFiltradas = productosActualizados.filter(
-      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Papas Fritas'
+      (p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Papas Fritas'
     )
     const chorrillanasFiltradas = productosActualizados.filter(
-      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Chorrillanas'
+      (p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Chorrillanas'
     )
     const salchipapasFiltradas = productosActualizados.filter(
-      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Salchipapas'
+      (p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Salchipapas'
     )
     const bebidasFiltradas = productosActualizados.filter(
-      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Bebestibles'
+      (p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Bebestibles'
     )
     const extrasFiltradas = productosActualizados.filter(
-      (p) => normalizarCategoriaParaFiltro(p.categoria) === 'Extras'
+      (p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Extras'
     )
 
     if (
@@ -1117,6 +1271,7 @@ function App() {
   // Estados para agregados desde la API
   const [agregadosAPI, setAgregadosAPI] = useState<AgregadoAPI[]>([])
   const [cargandoAgregados, setCargandoAgregados] = useState<boolean>(true)
+  const [errorAgregados, setErrorAgregados] = useState<string | null>(null)
   const [mostrarModalAgregado, setMostrarModalAgregado] = useState<boolean>(false)
   const [agregadoEditando, setAgregadoEditando] = useState<AgregadoAPI | null>(null)
 
@@ -1142,14 +1297,13 @@ function App() {
         setExtras(productos.productos.extras.items as Producto[])
         return
       }
-      
-      const response = await fetch(`${API_URL}?t=${Date.now()}`, {
-        cache: 'no-store'
-      })
-      if (!response.ok) {
-        throw new Error('Error al cargar productos desde la API')
+
+      const { url, data } = await fetchJsonPrimeraUrlOk(URLS_CANDIDATAS_PRODUCTOS)
+      productosApiRef.current = url
+      const productosAPI = data as ProductoAPI[]
+      if (!Array.isArray(productosAPI)) {
+        throw new Error('La API de productos no devolvió un arreglo')
       }
-      const productosAPI: ProductoAPI[] = await response.json()
 
       sincronizarProductosEnEstado(productosAPI.map(mapProductoAPIToProducto))
     } catch (error) {
@@ -1173,31 +1327,75 @@ function App() {
     }
   }
 
-  // Función para obtener agregados de la API
+  const mapearAgregadoParaAPI = (agregado: AgregadoAPI): AgregadoApiPayload => ({
+    item: agregado.item.trim(),
+    categoria: agregado.categoria.trim(),
+    precioM: Number(agregado.precioM),
+    precioL: Number(agregado.precioL),
+    precioXL: Number(agregado.precioXL)
+  })
+
+  // Función para obtener agregados de la API (MockAPI suele devolver un arreglo directo)
   const cargarAgregadosDesdeAPI = async () => {
-    try {
-      setCargandoAgregados(true)
-      
-      // Si USE_LOCAL_DATA está activo, usar solo datos locales
-      if (USE_LOCAL_DATA) {
-        setAgregadosAPI(obtenerAgregadosLocalesDesdeJSON())
-        return
+    setCargandoAgregados(true)
+    setErrorAgregados(null)
+    let detalleError = ''
+
+    const construirListaDesdePayload = (payload: unknown): unknown[] => {
+      const raiz = parseJsonAnidado(payload)
+      if (Array.isArray(raiz) && raiz.length > 0) {
+        return raiz
       }
-      
-      const response = await fetch(`${API_URL_AGREGADOS}?t=${Date.now()}`, {
-        cache: 'no-store'
-      })
-      if (!response.ok) {
-        throw new Error('Error al cargar agregados desde la API')
-      }
-      const agregados: AgregadoAPI[] = await response.json()
-      setAgregadosAPI(agregados.length > 0 ? agregados : obtenerAgregadosLocalesDesdeJSON())
-    } catch (error) {
-      console.error('Error al cargar agregados desde la API:', error)
-      setAgregadosAPI(obtenerAgregadosLocalesDesdeJSON())
-    } finally {
-      setCargandoAgregados(false)
+      return extraerListaAgregadosDePayload(payload)
     }
+
+    for (const baseUrl of URLS_CANDIDATAS_AGREGADOS) {
+      const intentosFetch = [`${baseUrl}?t=${Date.now()}`, baseUrl]
+      for (const fetchUrl of intentosFetch) {
+        try {
+          const res = await fetch(fetchUrl, {
+            cache: 'no-store',
+            headers: { Accept: 'application/json' }
+          })
+          if (!res.ok) {
+            detalleError = `${baseUrl} respondió HTTP ${res.status}.`
+            continue
+          }
+          let payload: unknown
+          try {
+            payload = await res.json()
+          } catch {
+            detalleError = `${baseUrl}: el cuerpo no es JSON válido.`
+            continue
+          }
+
+          const listaCruda = construirListaDesdePayload(payload).filter(
+            (r) => r != null && typeof r === 'object'
+          )
+          const agregados: AgregadoAPI[] = listaCruda.map((r, i) =>
+            mapearRegistroAAgregadoAPI(r, i)
+          )
+
+          if (agregados.length > 0) {
+            agregadosApiRef.current = baseUrl
+            setAgregadosAPI(agregados)
+            setErrorAgregados(null)
+            setCargandoAgregados(false)
+            return
+          }
+          detalleError = `${baseUrl}: JSON recibido pero la lista de agregados quedó vacía.`
+        } catch (e) {
+          detalleError = `${baseUrl}: ${e instanceof Error ? e.message : 'error de red'}`
+        }
+      }
+    }
+
+    console.error('Error al cargar agregados desde la API:', detalleError)
+    setAgregadosAPI([])
+    setErrorAgregados(
+      `No se pudieron cargar los agregados. ${detalleError} Comprueba en el navegador que abre bien: ${API_URL_AGREGADOS}. Rutas alternativas probadas: ${URLS_CANDIDATAS_AGREGADOS.join(', ')}.`
+    )
+    setCargandoAgregados(false)
   }
 
   // Cargar el estado de autenticación desde localStorage al iniciar
@@ -1207,26 +1405,10 @@ function App() {
       setUsuarioAutenticado(true)
     }
     cargarHistorialPedidos()
-    
-    // Cargar productos - siempre desde datos locales en este modo
-    const productosLocales = [
-      ...(productos.productos.papas_fritas.items as Producto[]),
-      ...(productos.productos.chorrillanas.items as Producto[]),
-      ...(productos.productos.salchipapas.items as Producto[]),
-      ...(productos.productos.bebidas.items as Producto[]),
-      ...(productos.productos.extras.items as Producto[])
-    ]
-    setTodosLosProductosAPI(productosLocales)
-    setPapasFritas(productos.productos.papas_fritas.items as Producto[])
-    setChorrillanas(productos.productos.chorrillanas.items as Producto[])
-    setSalchipapas(productos.productos.salchipapas.items as Producto[])
-    setBebidas(productos.productos.bebidas.items as Producto[])
-    setExtras(productos.productos.extras.items as Producto[])
-    setCargandoProductos(false)
-    
-    // Cargar agregados
-    setAgregadosAPI(obtenerAgregadosLocalesDesdeJSON())
-    setCargandoAgregados(false)
+
+    // Respetar la configuración central de origen de datos
+    void cargarProductosDesdeAPI()
+    void cargarAgregadosDesdeAPI()
   }, [])
 
   // Función para iniciar sesión
@@ -1255,7 +1437,7 @@ function App() {
 
     // Obtener el producto completo desde la API para tener todos los datos (incluyendo categoría)
     try {
-      const response = await fetch(`${API_URL}/${producto.id}?t=${Date.now()}`, {
+      const response = await fetch(`${productosApiRef.current}/${producto.id}?t=${Date.now()}`, {
         cache: 'no-store'
       })
       if (response.ok) {
@@ -1304,7 +1486,7 @@ function App() {
         return
       }
 
-      const response = await fetch(`${API_URL}/${id}`, {
+      const response = await fetch(`${productosApiRef.current}/${id}`, {
         method: 'DELETE'
       })
 
@@ -1345,7 +1527,7 @@ function App() {
       // Código original para API real
       if (esEdicion && productoData.id) {
         // Actualizar producto existente
-        const response = await fetch(`${API_URL}/${productoData.id}`, {
+        const response = await fetch(`${productosApiRef.current}/${productoData.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -1362,7 +1544,7 @@ function App() {
       } else {
         // Crear nuevo producto
         const { id, ...productoSinId } = productoData
-        const response = await fetch(API_URL, {
+        const response = await fetch(productosApiRef.current, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -1420,7 +1602,7 @@ function App() {
         return
       }
 
-      const response = await fetch(`${API_URL_AGREGADOS}/${id}`, {
+      const response = await fetch(`${agregadosApiRef.current}/${id}`, {
         method: 'DELETE'
       })
 
@@ -1459,36 +1641,38 @@ function App() {
 
       // Código original para API real
       if (agregadoData.id && agregadoEditando) {
+        const payloadGuardar = mapearAgregadoParaAPI(agregadoData)
         // Actualizar agregado existente
-        const response = await fetch(`${API_URL_AGREGADOS}/${agregadoData.id}`, {
+        const response = await fetch(`${agregadosApiRef.current}/${agregadoData.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(agregadoData)
+          body: JSON.stringify(payloadGuardar)
         })
 
         if (!response.ok) {
           throw new Error('Error al actualizar el agregado')
         }
+
+        await cargarAgregadosDesdeAPI()
       } else {
         // Crear nuevo agregado
-        const { id, ...agregadoSinId } = agregadoData
-        const response = await fetch(API_URL_AGREGADOS, {
+        const payloadGuardar = mapearAgregadoParaAPI(agregadoData)
+        const response = await fetch(agregadosApiRef.current, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(agregadoSinId)
+          body: JSON.stringify(payloadGuardar)
         })
 
         if (!response.ok) {
           throw new Error('Error al crear el agregado')
         }
-      }
 
-      // Recargar agregados
-      await cargarAgregadosDesdeAPI()
+        await cargarAgregadosDesdeAPI()
+      }
     } catch (error) {
       console.error('Error al guardar agregado:', error)
       throw error
@@ -1787,7 +1971,7 @@ function App() {
   }
 
   const agregarProductoAlPedido = (producto: Producto) => {
-    const categoriaNormalizada = normalizarCategoriaParaFiltro(producto.categoria)
+    const categoriaNormalizada = normalizarCategoriaParaFiltro(producto.categoria, producto.nombre)
 
     const esPapaFritaPorId = producto.id.includes('papas_') || 
                               (producto.id.toLowerCase().includes('papa') && !producto.id.toLowerCase().includes('chorrillana') && !producto.id.toLowerCase().includes('salchipapa'))
@@ -2752,7 +2936,7 @@ function App() {
                     {['Todas', 'Papas Fritas', 'Chorrillanas', 'Salchipapas', 'Bebestibles', 'Extras'].map((cat) => {
                       const productosEnCategoria = cat === 'Todas'
                         ? todosLosProductosAPI.length
-                        : todosLosProductosAPI.filter(p => normalizarCategoriaParaFiltro(p.categoria) === cat).length
+                        : todosLosProductosAPI.filter(p => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === cat).length
                       return (
                         <button
                           key={cat}
@@ -2770,7 +2954,7 @@ function App() {
                   {todosLosProductosAPI
                     .filter((p) =>
                       filtroCategoriaGestor === 'Todas' ||
-                      normalizarCategoriaParaFiltro(p.categoria) === filtroCategoriaGestor
+                      normalizarCategoriaParaFiltro(p.categoria, p.nombre) === filtroCategoriaGestor
                     )
                     .map((producto) => (
                     <div key={producto.id} className="producto-card-gestor">
@@ -2818,7 +3002,7 @@ function App() {
                 </div>
                 {(todosLosProductosAPI.length === 0 || todosLosProductosAPI.filter((p) =>
                   filtroCategoriaGestor === 'Todas' ||
-                  normalizarCategoriaParaFiltro(p.categoria) === filtroCategoriaGestor
+                  normalizarCategoriaParaFiltro(p.categoria, p.nombre) === filtroCategoriaGestor
                 ).length === 0) && (
                   <div className="gestor-empty">
                     {todosLosProductosAPI.length === 0
@@ -2867,6 +3051,32 @@ function App() {
                 <div className="gestor-loading">Cargando agregados...</div>
               ) : (
                 <>
+                  {errorAgregados && (
+                    <div
+                      style={{
+                        backgroundColor: '#f8d7da',
+                        color: '#721c24',
+                        border: '1px solid #f5c6cb',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        marginBottom: '16px',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        gap: '12px',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <span style={{ flex: '1 1 280px' }}>{errorAgregados}</span>
+                      <button
+                        type="button"
+                        className="gestor-filtro-btn active"
+                        onClick={() => void cargarAgregadosDesdeAPI()}
+                      >
+                        Reintentar carga
+                      </button>
+                    </div>
+                  )}
                   <div className="gestor-filtros">
                     <span className="gestor-filtros-label">Filtrar por tipo:</span>
                     <div className="gestor-filtros-buttons">
@@ -2993,7 +3203,9 @@ function App() {
                   )}
 
                   {agregadosAPI.length === 0 && (
-                    <div className="gestor-empty">No hay agregados cargados desde la API</div>
+                    <div className="gestor-empty">
+                      {errorAgregados ? 'No hay agregados disponibles porque falló la conexión con la API' : 'No hay agregados cargados desde la API'}
+                    </div>
                   )}
                 </>
               )}
