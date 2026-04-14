@@ -158,6 +158,25 @@ type AgregadoApiPayload = {
   precioXL: number;
 }
 
+const CATEGORIA_AGREGADOS_SUPER_PREMIUM = 'Agregados Super Premium'
+
+type TipoAgregadoPedido = 'basico' | 'premium' | 'super_premium'
+
+function esItemSuperPremiumPorNombre(nombre: string): boolean {
+  const t = nombre.trim().toLowerCase()
+  if (t === 'carne mechada') return true
+  if (t === 'tocino crocante') return true
+  if (t.includes('queso chedar') || t.includes('queso cheddar')) return true
+  return false
+}
+
+/** Categoría para listados: API explícita o ítems Carne Mechada / Tocino / Queso Chedar */
+function categoriaAgregadoParaUI(a: AgregadoAPI): string {
+  if (a.categoria === CATEGORIA_AGREGADOS_SUPER_PREMIUM) return CATEGORIA_AGREGADOS_SUPER_PREMIUM
+  if (esItemSuperPremiumPorNombre(a.item)) return CATEGORIA_AGREGADOS_SUPER_PREMIUM
+  return a.categoria
+}
+
 function mapearRegistroAAgregadoAPI(reg: unknown, index: number): AgregadoAPI {
   const o = (reg && typeof reg === 'object' ? reg : {}) as Record<string, unknown>
   const idRaw = leerCampoFlexible(o, ['id', '_id'])
@@ -225,7 +244,7 @@ function ModalAgregados({
     // NO llamar a onCambiarTamañoProducto porque solo queremos cambiar el tamaño de los agregados, no del producto
   };
 
-  const handleAgregadoClick = (nombre: string, precio: number, tipo: 'basico' | 'premium') => {
+  const handleAgregadoClick = (nombre: string, precio: number, tipo: TipoAgregadoPedido) => {
     onAgregarAgregado({
       nombre: nombre,
       precio,
@@ -240,8 +259,11 @@ function ModalAgregados({
     }
   };
 
-  const agregadosBasicos = agregadosAPI.filter((agregado) => agregado.categoria === 'Agregados Básicos');
-  const agregadosPremium = agregadosAPI.filter((agregado) => agregado.categoria === 'Agregados Premium');
+  const agregadosBasicos = agregadosAPI.filter((agregado) => categoriaAgregadoParaUI(agregado) === 'Agregados Básicos');
+  const agregadosPremium = agregadosAPI.filter((agregado) => categoriaAgregadoParaUI(agregado) === 'Agregados Premium');
+  const agregadosSuperPremium = agregadosAPI.filter(
+    (agregado) => categoriaAgregadoParaUI(agregado) === CATEGORIA_AGREGADOS_SUPER_PREMIUM
+  );
 
   const getPrecioAgregado = (agregado: AgregadoAPI, tamaño: string): number => {
     switch (tamaño) {
@@ -256,12 +278,12 @@ function ModalAgregados({
     }
   };
 
-  const handleCambiarCantidadAgregado = (nombreAgregado: string, cambio: number, tipo: 'basico' | 'premium') => {
+  const handleCambiarCantidadAgregado = (nombreAgregado: string, cambio: number, tipo: TipoAgregadoPedido) => {
     if (cambio > 0) {
       // Incrementar: agregar el agregado
-      const agregadoSeleccionado = (tipo === 'basico' ? agregadosBasicos : agregadosPremium).find(
-        (agregado) => agregado.item === nombreAgregado
-      )
+      const listaTipo =
+        tipo === 'basico' ? agregadosBasicos : tipo === 'super_premium' ? agregadosSuperPremium : agregadosPremium
+      const agregadoSeleccionado = listaTipo.find((agregado) => agregado.item === nombreAgregado)
       const precio = agregadoSeleccionado
         ? getPrecioAgregado(agregadoSeleccionado, gramajeSelecionado)
         : 0
@@ -397,6 +419,50 @@ function ModalAgregados({
                          </div>
                        )}
                      </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="agregados-section">
+              <h3>Agregados Super Premium</h3>
+              <div className="agregados-grid">
+                {agregadosSuperPremium.map((agregado, index) => {
+                  const precio = getPrecioAgregado(agregado, gramajeSelecionado);
+                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item);
+                  return (
+                    <div
+                      key={index}
+                      className={`agregado-item ${agregadoExistente ? 'active' : ''}`}
+                    >
+                      <div className="agregado-info" onClick={() => handleAgregadoClick(agregado.item, precio, 'super_premium')}>
+                        <span className="agregado-nombre">{agregado.item}</span>
+                        <span className="agregado-precio">{formatearPrecio(precio)}</span>
+                      </div>
+                      {agregadoExistente && (
+                        <div className="agregado-contador">
+                          <button
+                            className="btn-contador"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCambiarCantidadAgregado(agregado.item, -1, 'super_premium');
+                            }}
+                          >
+                            -
+                          </button>
+                          <span className="cantidad-display">{agregadoExistente.cantidad}</span>
+                          <button
+                            className="btn-contador"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCambiarCantidadAgregado(agregado.item, 1, 'super_premium');
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -843,6 +909,7 @@ function ModalAgregadoCRUD({
               >
                 <option value="Agregados Básicos">Agregados Básicos</option>
                 <option value="Agregados Premium">Agregados Premium</option>
+                <option value="Agregados Super Premium">Agregados Super Premium</option>
               </select>
             </div>
             <div style={{ marginBottom: '20px' }}>
@@ -1118,14 +1185,14 @@ interface Agregado {
   nombre: string;
   precio: number;
   tamaño: string;
-  tipo: 'basico' | 'premium';
+  tipo: TipoAgregadoPedido;
 }
 
 interface AgregadoEnPedido {
   nombre: string;
   precio: number;
   tamaño: string;
-  tipo: 'basico' | 'premium';
+  tipo: TipoAgregadoPedido;
   cantidad: number;
 }
 
@@ -1585,7 +1652,10 @@ function App() {
   }
 
   const handleEditarAgregado = (agregado: AgregadoAPI) => {
-    setAgregadoEditando(agregado)
+    setAgregadoEditando({
+      ...agregado,
+      categoria: categoriaAgregadoParaUI(agregado)
+    })
     setMostrarModalAgregado(true)
   }
 
@@ -1825,14 +1895,15 @@ function App() {
   }
 
   // Función preparada para mostrar agregados por tipo
-  const mostrarAgregadosPorTipo = (tipo: 'basico' | 'premium') => {
+  const mostrarAgregadosPorTipo = (tipo: TipoAgregadoPedido) => {
     if (!tamañoSeleccionado) return
 
-    const agregadosFiltrados = agregadosAPI.filter((agregado) =>
-      tipo === 'basico'
-        ? agregado.categoria === 'Agregados Básicos'
-        : agregado.categoria === 'Agregados Premium'
-    )
+    const agregadosFiltrados = agregadosAPI.filter((agregado) => {
+      const cat = categoriaAgregadoParaUI(agregado)
+      if (tipo === 'basico') return cat === 'Agregados Básicos'
+      if (tipo === 'super_premium') return cat === CATEGORIA_AGREGADOS_SUPER_PREMIUM
+      return cat === 'Agregados Premium'
+    })
 
     const agregados: Agregado[] = agregadosFiltrados.map((item) => ({
       nombre: item.item,
@@ -2800,8 +2871,11 @@ function App() {
     }
   }
 
-  const agregadosBasicosAPI = agregadosAPI.filter((agregado) => agregado.categoria === 'Agregados Básicos')
-  const agregadosPremiumAPI = agregadosAPI.filter((agregado) => agregado.categoria === 'Agregados Premium')
+  const agregadosBasicosAPI = agregadosAPI.filter((agregado) => categoriaAgregadoParaUI(agregado) === 'Agregados Básicos')
+  const agregadosPremiumAPI = agregadosAPI.filter((agregado) => categoriaAgregadoParaUI(agregado) === 'Agregados Premium')
+  const agregadosSuperPremiumAPI = agregadosAPI.filter(
+    (agregado) => categoriaAgregadoParaUI(agregado) === CATEGORIA_AGREGADOS_SUPER_PREMIUM
+  )
 
   const agregarAgregadoIndependiente = (agregado: Agregado) => {
     // Crear un producto temporal para el agregado independiente
@@ -3080,12 +3154,16 @@ function App() {
                   <div className="gestor-filtros">
                     <span className="gestor-filtros-label">Filtrar por tipo:</span>
                     <div className="gestor-filtros-buttons">
-                      {['Todos', 'Básicos', 'Premium'].map((tipo) => {
-                        const cantidad = tipo === 'Todos'
-                          ? agregadosAPI.length
-                          : tipo === 'Básicos'
-                            ? agregadosAPI.filter(a => a.categoria === 'Agregados Básicos').length
-                            : agregadosAPI.filter(a => a.categoria === 'Agregados Premium').length
+                      {['Todos', 'Básicos', 'Premium', 'Super Premium'].map((tipo) => {
+                        const cantidad =
+                          tipo === 'Todos'
+                            ? agregadosAPI.length
+                            : tipo === 'Básicos'
+                              ? agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === 'Agregados Básicos').length
+                              : tipo === 'Premium'
+                                ? agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === 'Agregados Premium').length
+                                : agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === CATEGORIA_AGREGADOS_SUPER_PREMIUM)
+                                    .length
                         return (
                           <button
                             key={tipo}
@@ -3104,10 +3182,10 @@ function App() {
                   {(filtroAgregadosGestor === 'Todos' || filtroAgregadosGestor === 'Básicos') && (
                   <div className="agregados-section-gestor">
                     <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
-                      Agregados Básicos ({agregadosAPI.filter(a => a.categoria === 'Agregados Básicos').length})
+                      Agregados Básicos ({agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === 'Agregados Básicos').length})
                     </h4>
                     <div className={`agregados-grid-gestor ${vistaAgregadosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
-                      {agregadosAPI.filter(a => a.categoria === 'Agregados Básicos').map((agregado) => (
+                      {agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === 'Agregados Básicos').map((agregado) => (
                         <div key={agregado.id} className="agregado-card-gestor">
                           <div className="agregado-header-gestor">
                             <h5 className="agregado-nombre-gestor">{agregado.item}</h5>
@@ -3155,10 +3233,61 @@ function App() {
                   {(filtroAgregadosGestor === 'Todos' || filtroAgregadosGestor === 'Premium') && (
                   <div className="agregados-section-gestor" style={{ marginTop: filtroAgregadosGestor === 'Todos' ? '30px' : 0 }}>
                     <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
-                      Agregados Premium ({agregadosAPI.filter(a => a.categoria === 'Agregados Premium').length})
+                      Agregados Premium ({agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === 'Agregados Premium').length})
                     </h4>
                     <div className={`agregados-grid-gestor ${vistaAgregadosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
-                      {agregadosAPI.filter(a => a.categoria === 'Agregados Premium').map((agregado) => (
+                      {agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === 'Agregados Premium').map((agregado) => (
+                        <div key={agregado.id} className="agregado-card-gestor">
+                          <div className="agregado-header-gestor">
+                            <h5 className="agregado-nombre-gestor">{agregado.item}</h5>
+                          </div>
+                          <div className="agregado-info-gestor">
+                            <div className="agregado-detail">
+                              <span className="detail-label">Precios por Tamaño:</span>
+                            </div>
+                            <div className="agregado-precios">
+                              <div className="precio-item">
+                                <span className="precio-label">M:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioM)}</span>
+                              </div>
+                              <div className="precio-item">
+                                <span className="precio-label">L:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioL)}</span>
+                              </div>
+                              <div className="precio-item">
+                                <span className="precio-label">XL:</span>
+                                <span className="precio-value">{formatearPrecio(agregado.precioXL)}</span>
+                              </div>
+                            </div>
+                            <div className="producto-actions" style={{ marginTop: '15px' }}>
+                              <button
+                                className="btn-editar"
+                                onClick={() => handleEditarAgregado(agregado)}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                className="btn-eliminar"
+                                onClick={() => handleEliminarAgregado(agregado.id)}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Agregados Super Premium */}
+                  {(filtroAgregadosGestor === 'Todos' || filtroAgregadosGestor === 'Super Premium') && (
+                  <div className="agregados-section-gestor" style={{ marginTop: filtroAgregadosGestor === 'Todos' ? '30px' : 0 }}>
+                    <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
+                      Agregados Super Premium ({agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === CATEGORIA_AGREGADOS_SUPER_PREMIUM).length})
+                    </h4>
+                    <div className={`agregados-grid-gestor ${vistaAgregadosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
+                      {agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === CATEGORIA_AGREGADOS_SUPER_PREMIUM).map((agregado) => (
                         <div key={agregado.id} className="agregado-card-gestor">
                           <div className="agregado-header-gestor">
                             <h5 className="agregado-nombre-gestor">{agregado.item}</h5>
@@ -4051,6 +4180,81 @@ function App() {
                         precio: precio,
                         tamaño: tamañoSeleccionado,
                         tipo: 'premium'
+                      };
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            agregarAgregadoIndependiente(agregado);
+                            cerrarModalAgregadosIndependientes();
+                          }}
+                          style={{
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dee2e6',
+                            borderRadius: '8px',
+                            padding: '15px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            minHeight: '70px'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#e9ecef';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                        >
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#333',
+                            marginBottom: '5px'
+                          }}>
+                            {item.item}
+                          </div>
+                          <div style={{
+                            fontSize: '14px',
+                            color: '#666',
+                            fontWeight: 'normal'
+                          }}>
+                            {formatearPrecio(precio)}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Agregados Super Premium */}
+                <div style={{ marginBottom: '20px' }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: '#333',
+                    marginBottom: '15px'
+                  }}>
+                    Agregados Super Premium
+                  </h3>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '10px'
+                  }}>
+                    {agregadosSuperPremiumAPI.map((item, index) => {
+                      const precio = getPrecioAgregadoDesdeAPI(item, tamañoSeleccionado);
+                      const agregado: Agregado = {
+                        nombre: item.item,
+                        precio: precio,
+                        tamaño: tamañoSeleccionado,
+                        tipo: 'super_premium'
                       };
                       
                       return (
