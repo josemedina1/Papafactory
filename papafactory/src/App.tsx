@@ -158,7 +158,8 @@ type AgregadoApiPayload = {
   precioXL: number;
 }
 
-const CATEGORIA_AGREGADOS_SUPER_PREMIUM = 'Agregados Super Premium'
+const CATEGORIA_AGREGADOS_SUPER_PREMIUM = 'Super Premium'
+const CATEGORIA_AGREGADOS_SUPER_PREMIUM_LEGACY = 'Agregados Super Premium'
 
 type TipoAgregadoPedido = 'basico' | 'premium' | 'super_premium'
 
@@ -170,11 +171,20 @@ function esItemSuperPremiumPorNombre(nombre: string): boolean {
   return false
 }
 
+function normalizarCategoriaAgregado(categoria: string): string {
+  const c = categoria.trim()
+  if (c === CATEGORIA_AGREGADOS_SUPER_PREMIUM || c === CATEGORIA_AGREGADOS_SUPER_PREMIUM_LEGACY) {
+    return CATEGORIA_AGREGADOS_SUPER_PREMIUM
+  }
+  return c
+}
+
 /** Categoría para listados: API explícita o ítems Carne Mechada / Tocino / Queso Chedar */
 function categoriaAgregadoParaUI(a: AgregadoAPI): string {
-  if (a.categoria === CATEGORIA_AGREGADOS_SUPER_PREMIUM) return CATEGORIA_AGREGADOS_SUPER_PREMIUM
+  const categoria = normalizarCategoriaAgregado(a.categoria)
+  if (categoria === CATEGORIA_AGREGADOS_SUPER_PREMIUM) return CATEGORIA_AGREGADOS_SUPER_PREMIUM
   if (esItemSuperPremiumPorNombre(a.item)) return CATEGORIA_AGREGADOS_SUPER_PREMIUM
-  return a.categoria
+  return categoria
 }
 
 function mapearRegistroAAgregadoAPI(reg: unknown, index: number): AgregadoAPI {
@@ -425,7 +435,7 @@ function ModalAgregados({
             </div>
 
             <div className="agregados-section">
-              <h3>Agregados Super Premium</h3>
+              <h3>Super Premium</h3>
               <div className="agregados-grid">
                 {agregadosSuperPremium.map((agregado, index) => {
                   const precio = getPrecioAgregado(agregado, gramajeSelecionado);
@@ -787,7 +797,7 @@ function ModalAgregadoCRUD({
   useEffect(() => {
     if (agregado) {
       setItem(agregado.item)
-      setCategoria(agregado.categoria)
+      setCategoria(normalizarCategoriaAgregado(agregado.categoria))
       setPrecioMStr(agregado.precioM != null ? String(agregado.precioM) : '')
       setPrecioLStr(agregado.precioL != null ? String(agregado.precioL) : '')
       setPrecioXLStr(agregado.precioXL != null ? String(agregado.precioXL) : '')
@@ -909,7 +919,7 @@ function ModalAgregadoCRUD({
               >
                 <option value="Agregados Básicos">Agregados Básicos</option>
                 <option value="Agregados Premium">Agregados Premium</option>
-                <option value="Agregados Super Premium">Agregados Super Premium</option>
+                <option value={CATEGORIA_AGREGADOS_SUPER_PREMIUM}>Super Premium</option>
               </select>
             </div>
             <div style={{ marginBottom: '20px' }}>
@@ -1396,7 +1406,7 @@ function App() {
 
   const mapearAgregadoParaAPI = (agregado: AgregadoAPI): AgregadoApiPayload => ({
     item: agregado.item.trim(),
-    categoria: agregado.categoria.trim(),
+    categoria: normalizarCategoriaAgregado(agregado.categoria),
     precioM: Number(agregado.precioM),
     precioL: Number(agregado.precioL),
     precioXL: Number(agregado.precioXL)
@@ -3280,11 +3290,11 @@ function App() {
                   </div>
                   )}
 
-                  {/* Agregados Super Premium */}
+                  {/* Super Premium */}
                   {(filtroAgregadosGestor === 'Todos' || filtroAgregadosGestor === 'Super Premium') && (
                   <div className="agregados-section-gestor" style={{ marginTop: filtroAgregadosGestor === 'Todos' ? '30px' : 0 }}>
                     <h4 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--papa-gray-dark)', marginBottom: '15px' }}>
-                      Agregados Super Premium ({agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === CATEGORIA_AGREGADOS_SUPER_PREMIUM).length})
+                      Super Premium ({agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === CATEGORIA_AGREGADOS_SUPER_PREMIUM).length})
                     </h4>
                     <div className={`agregados-grid-gestor ${vistaAgregadosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
                       {agregadosAPI.filter((a) => categoriaAgregadoParaUI(a) === CATEGORIA_AGREGADOS_SUPER_PREMIUM).map((agregado) => (
@@ -4232,7 +4242,7 @@ function App() {
                   </div>
                 </div>
 
-                {/* Agregados Super Premium */}
+                {/* Super Premium */}
                 <div style={{ marginBottom: '20px' }}>
                   <h3 style={{
                     fontSize: '18px',
@@ -4240,7 +4250,7 @@ function App() {
                     color: '#333',
                     marginBottom: '15px'
                   }}>
-                    Agregados Super Premium
+                    Super Premium
                   </h3>
                   
                   <div style={{
