@@ -1,0 +1,53 @@
+name: Publicar actualización de escritorio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'papafactory/**'
+      - '.github/workflows/desktop-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: papafactory
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: papafactory/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Asignar versión de actualización
+        run: |
+          $desktopVersion = "1.0.$env:GITHUB_RUN_NUMBER"
+          npm version $desktopVersion --no-git-tag-version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "DESKTOP_VERSION=$desktopVersion" >> $env:GITHUB_ENV
+      - name: Generar instalador y manifiesto
+        run: npm run build-admin
+      - name: Publicar versión completa
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $desktopTag = "v$env:DESKTOP_VERSION"
+          # Los nombres deben coincidir exactamente con las URLs de latest.yml.
+          Rename-Item -LiteralPath "build-output/PapaFactory Setup $env:DESKTOP_VERSION.exe" -NewName "PapaFactory-Setup-$env:DESKTOP_VERSION.exe"
+          Rename-Item -LiteralPath "build-output/PapaFactory Setup $env:DESKTOP_VERSION.exe.blockmap" -NewName "PapaFactory-Setup-$env:DESKTOP_VERSION.exe.blockmap"
+          gh release create $desktopTag "build-output/PapaFactory-Setup-$env:DESKTOP_VERSION.exe" "build-output/PapaFactory-Setup-$env:DESKTOP_VERSION.exe.blockmap" "build-output/latest.yml" --target $env:GITHUB_SHA --title "PapaFactory $env:DESKTOP_VERSION" --generate-notes --draft
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gh release edit $desktopTag --draft=false --latest

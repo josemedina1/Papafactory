@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
+import DesktopUpdates from './DesktopUpdates'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
 import { fetchJsonPrimeraUrlOk } from './apiProductos'
@@ -2872,6 +2873,7 @@ function App() {
         <div className="gestor-header">
           <h1 className="gestor-title">Gestor Papafactory</h1>
           <div className="gestor-menu">
+            <DesktopUpdates hasPendingOrder={pedidoActual.length > 0} />
             <button 
               className="btn-volver"
               onClick={() => setMostrarGestor(false)}
@@ -3323,6 +3325,7 @@ function App() {
       <div className="app-header">
         <h1 className="app-title">PAPA FACTORY</h1>
         <div className="header-buttons">
+          <DesktopUpdates hasPendingOrder={pedidoActual.length > 0} />
           {usuarioAutenticado ? (
             <>
               <button 

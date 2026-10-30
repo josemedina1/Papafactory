@@ -1475,6 +1475,25 @@ body {
   font: inherit;
 }
 
+.desktop-updates {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: 280px;
+}
+
+.desktop-updates small {
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.desktop-updates button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .fajita-card:focus-visible {
   outline: 3px solid #d79b00;
   outline-offset: 3px;

@@ -1,7 +1,7 @@
 {
   "name": "papafactory",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "PapaFactory - Aplicación de escritorio",
   "author": "Tu Nombre",
   "main": "electron-simple.js",
@@ -24,10 +24,12 @@
     "create-icon-simple": "node create-icon-simple.js",
     "tauri": "tauri",
     "tauri-dev": "tauri dev",
-    "tauri-build": "tauri build"
+    "tauri-build": "tauri build",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "bootstrap": "^5.3.6",
+    "electron-updater": "^6.8.11",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -60,16 +62,28 @@
     "files": [
       "dist/**/*",
       "electron-simple.js",
-      "public/icon.png"
+      "public/icon.png",
+      "preload.cjs",
+      "desktop-updates.cjs"
     ],
     "win": {
       "target": "nsis",
       "forceCodeSigning": false,
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false,
       "icon": "public/icon.png"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "josemedina1",
+        "repo": "Papafactory",
+        "releaseType": "release"
+      }
+    ]
   }
 }
