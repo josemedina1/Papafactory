@@ -1467,3 +1467,22 @@ body {
   text-align: center;
   font-size: 14px;
 }
+.fajita-card {
+  background: linear-gradient(135deg, #71451f, #2e2119);
+  background-size: cover;
+  background-position: center;
+  color: white;
+  font: inherit;
+}
+
+.fajita-card:focus-visible {
+  outline: 3px solid #d79b00;
+  outline-offset: 3px;
+}
+
+.categoria-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}

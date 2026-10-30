@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
+import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro } from './categorias'
 
 // API URLs - Comentados temporalmente mientras se configura MockAPI
 // Para usar una API real, reemplaza con tus endpoints reales
@@ -490,12 +491,14 @@ function ModalProductoCRUD({
   onClose,
   producto,
   productoCompleto,
+  categoriaInicial,
   onSave
 }: {
   show: boolean;
   onClose: () => void;
   producto: Producto | null;
   productoCompleto?: ProductoAPI | null;
+  categoriaInicial: string;
   onSave: (producto: ProductoAPI) => Promise<void>;
 }) {
   const [nombre, setNombre] = useState<string>('')
@@ -513,7 +516,7 @@ function ModalProductoCRUD({
       setTamano(productoCompleto.tamano)
       setPrecioStr(productoCompleto.precio !== undefined ? String(productoCompleto.precio) : '')
       // Normalizar la categoría para que coincida con las opciones del select
-      const catNormalizada = normalizarCategoria(productoCompleto.categoria)
+      const catNormalizada = normalizarCategoriaParaFiltro(productoCompleto.categoria, productoCompleto.nombre) || ''
       setCategoria(catNormalizada)
       setImagen_producto(productoCompleto.imagen_producto || '')
     } else if (producto) {
@@ -521,39 +524,18 @@ function ModalProductoCRUD({
       setNombre(producto.nombre)
       setTamano(producto.tamaño)
       setPrecioStr(producto.precio !== undefined ? String(producto.precio) : '')
-      setCategoria('')
+      setCategoria(normalizarCategoriaParaFiltro(producto.categoria, producto.nombre) || '')
       setImagen_producto(producto.descripcion || '')
     } else {
       // Si no hay producto, limpiar el formulario
       setNombre('')
       setTamano('')
       setPrecioStr('')
-      setCategoria('')
+      setCategoria(categoriaInicial)
       setImagen_producto('')
     }
-  }, [producto, productoCompleto])
-
-  // Función para normalizar la categoría de la API a las opciones del select
-  const normalizarCategoria = (cat: string): string => {
-    if (!cat) return ''
-    const catLower = cat.toLowerCase()
-    if (catLower.includes('papa') && !catLower.includes('chorrillana') && !catLower.includes('salchipapa')) {
-      return 'Papas Fritas'
-    }
-    if (catLower.includes('chorrillana') && !catLower.includes('salchipapa')) {
-      return 'Chorrillanas'
-    }
-    if (catLower.includes('salchipapa')) {
-      return 'Salchipapas'
-    }
-    if (catLower.includes('bebida') || catLower.includes('bebestible')) {
-      return 'Bebestibles'
-    }
-    if (catLower.includes('extra')) {
-      return 'Extras'
-    }
-    return cat // Si no coincide, devolver la original
-  }
+    setError('')
+  }, [producto, productoCompleto, categoriaInicial, show])
 
   if (!show) return null
 
@@ -564,7 +546,11 @@ function ModalProductoCRUD({
 
     try {
       const precioNum = precioStr.trim() === '' ? undefined : parseFloat(precioStr.replace(',', '.'))
-      if (precioNum !== undefined && (isNaN(precioNum) || precioNum < 0)) {
+      if (!nombre.trim() || !tamano.trim()) {
+        setError('Ingrese el nombre y tamaño del producto')
+        return
+      }
+      if (precioNum === undefined || !Number.isFinite(precioNum) || precioNum < 0) {
         setError('Ingrese un precio válido (solo números positivos)')
         setGuardando(false)
         return
@@ -572,8 +558,8 @@ function ModalProductoCRUD({
 
       const productoData: ProductoAPI = {
         id: productoCompleto?.id || producto?.id || '',
-        nombre,
-        tamano,
+        nombre: nombre.trim(),
+        tamano: tamano.trim(),
         precio: precioNum,
         moneda: 'CLP', // Siempre CLP (campo no mostrado en el formulario)
         categoria: categoria || 'Papas Fritas', // Usar la categoría seleccionada o Papas Fritas por defecto
@@ -683,6 +669,7 @@ function ModalProductoCRUD({
                   boxSizing: 'border-box'
                 }}
                 placeholder="Ingrese el precio (solo números)"
+                required
               />
             </div>
             <div style={{ marginBottom: '20px' }}>
@@ -705,11 +692,9 @@ function ModalProductoCRUD({
                 required
               >
                 <option value="">Seleccione una categoría</option>
-                <option value="Papas Fritas">Papas Fritas</option>
-                <option value="Chorrillanas">Chorrillanas</option>
-                <option value="Salchipapas">Salchipapas</option>
-                <option value="Bebestibles">Bebestibles</option>
-                <option value="Extras">Extras</option>
+                {CATEGORIAS_PRODUCTOS.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
             </div>
             <div style={{ marginBottom: '20px' }}>
@@ -1258,32 +1243,6 @@ function App() {
   const productosApiRef = useRef<string>(API_URL)
   const agregadosApiRef = useRef<string>(API_URL_AGREGADOS)
 
-  // Normaliza la categoría del producto al nombre del filtro (soporta variaciones de API)
-  const normalizarCategoriaParaFiltro = (
-    categoria: string | undefined,
-    nombreProducto?: string
-  ): string | null => {
-    const normalizarTexto = (valor: string): string =>
-      valor
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[_-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-
-    const c = categoria ? normalizarTexto(categoria) : ''
-    const n = nombreProducto ? normalizarTexto(nombreProducto) : ''
-    const texto = `${c} ${n}`.trim()
-
-    if (texto.includes('chorrillana') && !texto.includes('salchipapa')) return 'Chorrillanas'
-    if (texto.includes('salchipapa')) return 'Salchipapas'
-    if ((texto.includes('papa') || texto.includes('papas')) && !texto.includes('chorrillana') && !texto.includes('salchipapa')) return 'Papas Fritas'
-    if (texto.includes('bebida') || texto.includes('bebestible') || texto.includes('gaseosa') || texto.includes('jugo')) return 'Bebestibles'
-    if (texto.includes('extra') || texto.includes('aderezo') || texto.includes('salsa')) return 'Extras'
-    return null
-  }
-
   const mapProductoAPIToProducto = (p: ProductoAPI): Producto => {
     const raw = p as ProductoAPI & {
       category?: string;
@@ -1328,7 +1287,8 @@ function App() {
       chorrillanasFiltradas.length === 0 &&
       salchipapasFiltradas.length === 0 &&
       bebidasFiltradas.length === 0 &&
-      extrasFiltradas.length === 0
+      extrasFiltradas.length === 0 &&
+      !productosActualizados.some((p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Fajitas')
     ) {
       setPapasFritas(productosActualizados)
       setChorrillanas([])
@@ -1344,6 +1304,10 @@ function App() {
     setBebidas(bebidasFiltradas)
     setExtras(extrasFiltradas)
   }
+
+  const fajitas = todosLosProductosAPI.filter(
+    (p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Fajitas'
+  )
 
   // Estados para agregados desde la API
   const [agregadosAPI, setAgregadosAPI] = useState<AgregadoAPI[]>([])
@@ -1508,46 +1472,18 @@ function App() {
     setMostrarModalProducto(true)
   }
 
-  const handleEditarProducto = async (producto: Producto) => {
+  const handleEditarProducto = (producto: Producto) => {
     setProductoEditando(producto)
+    setProductoCompletoEditando({
+      id: producto.id,
+      nombre: producto.nombre,
+      tamano: producto.tamaño,
+      precio: producto.precio,
+      moneda: producto.moneda,
+      categoria: normalizarCategoriaParaFiltro(producto.categoria, producto.nombre) || '',
+      imagen_producto: producto.descripcion
+    })
     setMostrarModalProducto(true)
-
-    // Obtener el producto completo desde la API para tener todos los datos (incluyendo categoría)
-    try {
-      const response = await fetch(`${productosApiRef.current}/${producto.id}?t=${Date.now()}`, {
-        cache: 'no-store'
-      })
-      if (response.ok) {
-        const productoCompleto: ProductoAPI = await response.json()
-        setProductoCompletoEditando(productoCompleto)
-      } else {
-        // Si falla, usar el producto básico y crear un producto completo simulado
-        console.warn('No se pudo obtener el producto completo desde la API, usando datos básicos')
-        const productoCompletoSimulado: ProductoAPI = {
-          id: producto.id,
-          nombre: producto.nombre,
-          tamano: producto.tamaño,
-          precio: producto.precio,
-          moneda: producto.moneda,
-          categoria: producto.categoria || 'Papas Fritas',
-          imagen_producto: producto.descripcion
-        }
-        setProductoCompletoEditando(productoCompletoSimulado)
-      }
-    } catch (error) {
-      console.error('Error al cargar producto completo:', error)
-      // Crear un producto completo simulado con los datos básicos disponibles
-      const productoCompletoSimulado: ProductoAPI = {
-        id: producto.id,
-        nombre: producto.nombre,
-        tamano: producto.tamaño,
-        precio: producto.precio,
-        moneda: producto.moneda,
-        categoria: producto.categoria || 'Papas Fritas',
-        imagen_producto: producto.descripcion
-      }
-      setProductoCompletoEditando(productoCompletoSimulado)
-    }
   }
 
   const handleEliminarProducto = async (id: string) => {
@@ -3017,7 +2953,7 @@ function App() {
                 <div className="gestor-filtros">
                   <span className="gestor-filtros-label">Filtrar por categoría:</span>
                   <div className="gestor-filtros-buttons">
-                    {['Todas', 'Papas Fritas', 'Chorrillanas', 'Salchipapas', 'Bebestibles', 'Extras'].map((cat) => {
+                    {['Todas', ...CATEGORIAS_PRODUCTOS].map((cat) => {
                       const productosEnCategoria = cat === 'Todas'
                         ? todosLosProductosAPI.length
                         : todosLosProductosAPI.filter(p => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === cat).length
@@ -3054,6 +2990,10 @@ function App() {
                         <div className="producto-detail">
                           <span className="detail-label">Tamaño:</span>
                           <span className="detail-value">{producto.tamaño}</span>
+                        </div>
+                        <div className="producto-detail">
+                          <span className="detail-label">Categoría:</span>
+                          <span className="detail-value">{normalizarCategoriaParaFiltro(producto.categoria, producto.nombre) || 'Sin categoría'}</span>
                         </div>
                         <div className="producto-detail">
                           <span className="detail-label">Moneda:</span>
@@ -3363,6 +3303,7 @@ function App() {
         }}
         producto={productoEditando}
         productoCompleto={productoCompletoEditando}
+        categoriaInicial={filtroCategoriaGestor === 'Todas' ? '' : filtroCategoriaGestor}
         onSave={handleGuardarProducto}
       />
 
@@ -3535,6 +3476,34 @@ function App() {
             ) : (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: '#666' }}>
                 No hay productos de esta categoría en la API
+              </div>
+            )}
+          </div>
+
+          {/* Sección Fajitas */}
+          <div className="section-title">FAJITAS</div>
+          <div className="papas-grid">
+            {cargandoProductos ? (
+              <div className="categoria-empty">Cargando productos...</div>
+            ) : fajitas.length > 0 ? (
+              fajitas.map((fajita) => (
+                <button
+                  type="button"
+                  key={fajita.id}
+                  className="papa-card fajita-card"
+                  onClick={() => agregarProductoAlPedido(fajita)}
+                  style={fajita.descripcion ? {
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url(${fajita.descripcion})`
+                  } : undefined}
+                >
+                  <h5>{fajita.nombre}</h5>
+                  <div className="size">{fajita.tamaño}</div>
+                  <div className="price">{formatearPrecio(fajita.precio)}</div>
+                </button>
+              ))
+            ) : (
+              <div className="categoria-empty">
+                Aún no hay fajitas disponibles. Puedes agregarlas desde el Gestor.
               </div>
             )}
           </div>
@@ -4354,6 +4323,7 @@ function App() {
         }}
         producto={productoEditando}
         productoCompleto={productoCompletoEditando}
+        categoriaInicial={filtroCategoriaGestor === 'Todas' ? '' : filtroCategoriaGestor}
         onSave={handleGuardarProducto}
       />
 
