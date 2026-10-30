@@ -11,6 +11,9 @@ desde el Gestor y actualizar la app instalada mediante un botón, sin reinstalac
 Implementado:
 
 - **Fajitas** en menú de ventas, formulario y filtro del Gestor.
+- Fajitas abre el modal de agregados al agregarla y al editarla desde el pedido. Sus agregados permiten M y L; el tamaño base no cambia. Otros productos conservan M, L y XL.
+- Los agregados se distinguen por nombre, tamaño y tipo para no mezclar precios y cantidades de M y L.
+- Bebestibles prioriza `imagen_producto` de la API sobre las imágenes históricas por ID; ya no aplica la misma imagen genérica a los IDs numéricos.
 - CRUD de productos con MockAPI. Crear desde un filtro preselecciona esa categoría.
 - Clasificación compartida que respeta la categoría asignada sobre el nombre del producto.
 - Corrección de la recarga después de guardar: se eliminó `?t=...`, que causaba 404.
@@ -62,6 +65,11 @@ El ID 26 ya era Fajitas. Se verificaron **25 productos y 6 fajitas**: son cantid
 no valores fijos para las pruebas. Algunos nombres o imágenes parecen de intentos previos;
 no borrar ni fusionar productos sin indicación del usuario.
 
+En una consulta posterior durante la última petición, el catálogo ya contenía una sola fajita:
+ID 26, `Fajita Base Lechuga`, tamaño L, precio $2.500. El usuario pide dos opciones L a $2.500 cada una.
+Se solicitó el nombre de la segunda; no crear un producto con nombre inventado ni restaurar los intentos antiguos.
+Esta modificación de interfaz no cambió productos de la API.
+
 El historial de pedidos y otros estados usan `localStorage`, por ejemplo
 `historialPedidosPapaFactory` y `usuarioAutenticadoPapaFactory`. No se sincronizan entre web y escritorio.
 El acceso al Gestor se valida localmente en `ModalLogin`; no es autenticación de servidor.
@@ -100,13 +108,15 @@ Desplegar únicamente un sitio externo no actualiza los archivos de escritorio.
 
 ## Comprobaciones realizadas
 
-- `npm test`: **9 pruebas aprobadas** de categorías, lectura de API y controlador de actualizaciones.
+- `npm test`: **11 pruebas aprobadas** de categorías, tamaños de agregados, lectura de API y controlador de actualizaciones.
 - `npm run build`: TypeScript y Vite aprobados.
 - `npm run build-admin`: instalador local `1.0.0` generado en Windows.
 - Archivos de `app.asar` comparados con la compilación, incluidos preload y controlador.
 - SHA512 del instalador, `latest.yml` y proveedor de `app-update.yml` verificados.
 - Puente IPC probado con simulaciones: remitentes permitidos, rechazo de otros remitentes y cancelación de instalación.
 - Catálogo real leído y Fajitas visibles en Gestor y menú después de recargar.
+- Verificación en pestaña de prueba: modal Fajitas solo M/L, base L a $2.500, Mayonesa M $900 y L $1.100 suman $4.500; decrementar L conserva M, y reabrir el pedido permite editarlo. No se finalizó ningún pedido de prueba.
+- Se comprobaron siete URLs distintas de bebestibles en el DOM, coincidentes con las imágenes de la API. Las URLs remotas que fallen se ocultan, sin reintentar infinitamente ni mostrar una imagen genérica repetida.
 - Workflow remoto con pruebas, empaquetado y publicación de v1.0.1 completados.
 - Prueba sin ventana con **electron-updater real** y app `1.0.0`: detectó `1.0.1` en GitHub.
 
@@ -116,7 +126,7 @@ La detección y publicación están comprobadas; no presentarlas como prueba de 
 
 ## Pendientes y cómo continuar
 
-1. Leer la nueva petición y revisar `git status`. No hay otra función de negocio acordada pendiente.
+1. Leer la nueva petición y revisar `git status`. Está pendiente que el usuario indique el nombre de la segunda fajita L a $2.500; actualmente solo hay una en la API.
 2. Para validar el actualizador completo, usar una instalación de prueba: búsqueda, descarga,
    bloqueo con pedido pendiente, confirmación, reinicio y persistencia del historial.
    No interrumpir ventas reales ni modificar el catálogo real como prueba.

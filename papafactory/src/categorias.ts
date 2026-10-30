@@ -17,3 +17,22 @@ function reconocerCategoria(valor: string): string | null {
 export function normalizarCategoriaParaFiltro(categoria?: string, nombreProducto?: string): string | null {
   return reconocerCategoria(categoria || '') || reconocerCategoria(nombreProducto || '')
 }
+
+interface ProductoClasificable {
+  id: string;
+  nombre: string;
+  categoria?: string;
+}
+
+export function categoriaDelProducto(producto: ProductoClasificable): string | null {
+  return normalizarCategoriaParaFiltro(producto.categoria, producto.nombre)
+    || normalizarCategoriaParaFiltro(undefined, producto.id)
+}
+
+export function permiteAgregados(producto: ProductoClasificable): boolean {
+  return ['Papas Fritas', 'Chorrillanas', 'Salchipapas', 'Fajitas'].includes(categoriaDelProducto(producto) || '')
+}
+
+export function tamanosDeAgregados(producto: ProductoClasificable): string[] {
+  return categoriaDelProducto(producto) === 'Fajitas' ? ['M', 'L'] : ['M', 'L', 'XL']
+}

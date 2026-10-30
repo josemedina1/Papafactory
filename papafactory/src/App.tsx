@@ -4,7 +4,7 @@ import DesktopUpdates from './DesktopUpdates'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
 import { fetchJsonPrimeraUrlOk } from './apiProductos'
-import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro } from './categorias'
+import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, categoriaDelProducto, permiteAgregados, tamanosDeAgregados } from './categorias'
 
 // API URLs - Comentados temporalmente mientras se configura MockAPI
 // Para usar una API real, reemplaza con tus endpoints reales
@@ -214,23 +214,22 @@ function ModalAgregados({
   producto: Producto | null;
   agregadosAPI: AgregadoAPI[];
   onAgregarAgregado: (agregado: Agregado) => void;
-  onDecrementarAgregado: (nombreAgregado: string) => void;
+  onDecrementarAgregado: (nombreAgregado: string, tamaño: string, tipo: TipoAgregadoPedido) => void;
   agregadosExistentes?: AgregadoEnPedido[];
 }) {
   const [gramajeSelecionado, setGramajeSelecionado] = useState<string>(producto?.tamaño || 'M');
 
   // Actualizar el gramaje seleccionado cuando cambie el producto
   useEffect(() => {
-    if (producto?.tamaño) {
-      setGramajeSelecionado(producto.tamaño);
+    if (producto) {
+      const disponibles = tamanosDeAgregados(producto);
+      setGramajeSelecionado(disponibles.includes(producto.tamaño) ? producto.tamaño : disponibles[0]);
     }
-  }, [producto]);
+  }, [producto, show]);
 
   if (!show || !producto) return null;
 
-  const esChorrillana = producto.id.includes('chorrillana_') || producto.id.toLowerCase().includes('chorrillana') || ((producto as any).categoria?.toLowerCase() || '').includes('chorrillana');
-  const esSalchipapa = producto.id.includes('salchipapa_') || producto.id.toLowerCase().includes('salchipapa') || ((producto as any).categoria?.toLowerCase() || '').includes('salchipapa');
-
+  const categoria = categoriaDelProducto(producto);
   const formatearPrecio = (precio: number): string => {
     if (isNaN(precio)) return '$0'
     return new Intl.NumberFormat('es-CL', {
@@ -296,7 +295,7 @@ function ModalAgregados({
       })
     } else if (cambio < 0) {
       // Decrementar: usar la función de decremento
-      onDecrementarAgregado(nombreAgregado)
+      onDecrementarAgregado(nombreAgregado, gramajeSelecionado, tipo)
     }
   };
 
@@ -313,21 +312,23 @@ function ModalAgregados({
     }
   }
 
-  const gramajes = ['M', 'L', 'XL'];
+  const gramajes = tamanosDeAgregados(producto);
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
         <div className="modal-header">
-          <h2>{esSalchipapa ? 'Salchipapas - Agregados Disponibles' : esChorrillana ? 'Chorrillana - Agregados Disponibles' : 'Papas Fritas - Agregados Disponibles'}</h2>
+          <h2>{categoria || producto.nombre} - Agregados Disponibles</h2>
           <button className="btn-cerrar" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
+          <p>Tamaño de los agregados</p>
           <div className="gramajes-section">
             {gramajes.map((gramaje) => (
               <button
                 key={gramaje}
                 className={`gramaje-btn ${gramajeSelecionado === gramaje ? 'active' : ''}`}
+                aria-pressed={gramajeSelecionado === gramaje}
                 onClick={() => handleGramajeClick(gramaje)}
               >
                 {getTamañoNombre(gramaje)}
@@ -341,7 +342,7 @@ function ModalAgregados({
               <div className="agregados-grid">
                 {agregadosBasicos.map((agregado, index) => {
                   const precio = getPrecioAgregado(agregado, gramajeSelecionado);
-                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item);
+                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item && a.tamaño === gramajeSelecionado && a.tipo === 'basico');
                   return (
                                          <div 
                        key={index} 
@@ -385,7 +386,7 @@ function ModalAgregados({
               <div className="agregados-grid">
                 {agregadosPremium.map((agregado, index) => {
                   const precio = getPrecioAgregado(agregado, gramajeSelecionado);
-                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item);
+                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item && a.tamaño === gramajeSelecionado && a.tipo === 'premium');
                   return (
                                          <div 
                        key={index} 
@@ -429,7 +430,7 @@ function ModalAgregados({
               <div className="agregados-grid">
                 {agregadosSuperPremium.map((agregado, index) => {
                   const precio = getPrecioAgregado(agregado, gramajeSelecionado);
-                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item);
+                  const agregadoExistente = agregadosExistentes.find(a => a.nombre === agregado.item && a.tamaño === gramajeSelecionado && a.tipo === 'super_premium');
                   return (
                     <div
                       key={index}
@@ -1182,7 +1183,7 @@ interface AgregadoEnPedido {
 
 interface ItemPedido {
   id: string;
-  tipo: 'papa' | 'chorrillana' | 'bebida' | 'extra';
+  tipo: 'papa' | 'chorrillana' | 'fajita' | 'bebida' | 'extra';
   producto: Producto;
   agregados: AgregadoEnPedido[];
   cantidad: number;
@@ -1984,47 +1985,24 @@ function App() {
   }
 
   const agregarProductoAlPedido = (producto: Producto) => {
-    const categoriaNormalizada = normalizarCategoriaParaFiltro(producto.categoria, producto.nombre)
-
-    const esPapaFritaPorId = producto.id.includes('papas_') || 
-                              (producto.id.toLowerCase().includes('papa') && !producto.id.toLowerCase().includes('chorrillana') && !producto.id.toLowerCase().includes('salchipapa'))
-    const esChorrillanaPorId = producto.id.includes('chorrillana_') || 
-                                producto.id.toLowerCase().includes('chorrillana')
-    const esSalchipapaPorId = producto.id.includes('salchipapa_') || 
-                               producto.id.toLowerCase().includes('salchipapa')
-
-    const esPapaFrita = categoriaNormalizada === 'Papas Fritas' || esPapaFritaPorId || papasFritas.some(p => p.id === producto.id)
-    const esChorrillana = categoriaNormalizada === 'Chorrillanas' || esChorrillanaPorId || chorrillanas.some(c => c.id === producto.id)
-    const esSalchipapa = categoriaNormalizada === 'Salchipapas' || esSalchipapaPorId || salchipapas.some(s => s.id === producto.id)
-    
-    const esAgregable = esPapaFrita || esChorrillana || esSalchipapa
-    if (esAgregable) {
-      const nuevoItem: ItemPedido = {
-        id: `${producto.id}-${Date.now()}`,
-        tipo: esPapaFrita || esSalchipapa ? 'papa' : 'chorrillana',
-        producto: producto,
-        agregados: [],
-        cantidad: 1,
-        subtotal: producto.precio
-      }
-      
-      setPedidoActual([...pedidoActual, nuevoItem])
-      setProductoParaAgregados(producto)
-      setItemEditandoId(nuevoItem.id)
-      setShowModalAgregados(true)
-      return
-    }
-
+    const categoria = categoriaDelProducto(producto)
     const nuevoItem: ItemPedido = {
       id: `${producto.id}-${Date.now()}`,
-      tipo: producto.id.includes('agua_') || producto.id.includes('bebida_') || producto.id.includes('red_bull') || producto.id.includes('score_') || producto.id.includes('jugo_') ? 'bebida' : 'extra',
-      producto: producto,
+      tipo: categoria === 'Fajitas' ? 'fajita'
+        : categoria === 'Chorrillanas' ? 'chorrillana'
+        : categoria === 'Papas Fritas' || categoria === 'Salchipapas' ? 'papa'
+        : categoria === 'Bebestibles' ? 'bebida' : 'extra',
+      producto,
       agregados: [],
       cantidad: 1,
       subtotal: producto.precio
     }
-    
-    setPedidoActual([...pedidoActual, nuevoItem])
+    setPedidoActual((pedido) => [...pedido, nuevoItem])
+    if (permiteAgregados(producto)) {
+      setProductoParaAgregados(producto)
+      setItemEditandoId(nuevoItem.id)
+      setShowModalAgregados(true)
+    }
   }
 
   const handleAgregarAgregado = (agregado: Agregado) => {
@@ -2033,7 +2011,7 @@ function App() {
     const pedidoActualizado = pedidoActual.map(item => {
       if (item.id === itemEditandoId) {
         // Verificar si el agregado ya existe
-        const indiceAgregado = item.agregados.findIndex(a => a.nombre === agregado.nombre)
+        const indiceAgregado = item.agregados.findIndex(a => a.nombre === agregado.nombre && a.tamaño === agregado.tamaño && a.tipo === agregado.tipo)
 
         if (indiceAgregado !== -1) {
           // Si ya existe, aumentar la cantidad
@@ -2073,41 +2051,20 @@ function App() {
   }
 
   const handleItemClick = (item: ItemPedido) => {
-    // Detectar si es papa frita, chorrillana o salchipapa para poder editar agregados
-    // Verificar por ID (compatibilidad con datos locales)
-    const esPapaFritaPorId = item.producto.id.includes('papas_') || 
-                              (item.producto.id.toLowerCase().includes('papa') && !item.producto.id.toLowerCase().includes('chorrillana') && !item.producto.id.toLowerCase().includes('salchipapa'))
-    const esChorrillanaPorId = item.producto.id.includes('chorrillana_') || 
-                                item.producto.id.toLowerCase().includes('chorrillana')
-    const esSalchipapaPorId = item.producto.id.includes('salchipapa_') || 
-                               item.producto.id.toLowerCase().includes('salchipapa')
-    
-    // Verificar por arrays de productos de la API
-    const esPapaFrita = esPapaFritaPorId || papasFritas.some(p => p.id === item.producto.id)
-    const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === item.producto.id)
-    const esSalchipapa = esSalchipapaPorId || salchipapas.some(s => s.id === item.producto.id)
-    
-    // Verificar por categoría (para productos de la API)
-    const categoria = (item.producto as any).categoria?.toLowerCase() || ''
-    const esPapaFritaPorCategoria = categoria.includes('papa') && !categoria.includes('chorrillana') && !categoria.includes('salchipapa')
-    const esChorrillanaPorCategoria = categoria.includes('chorrillana') && !categoria.includes('salchipapa')
-    const esSalchipapaPorCategoria = categoria.includes('salchipapa')
-    
-    // Mostrar modal para papas fritas, chorrillanas y salchipapas (para editar agregados)
-    if (esPapaFrita || esChorrillana || esSalchipapa || esPapaFritaPorCategoria || esChorrillanaPorCategoria || esSalchipapaPorCategoria) {
+    if (permiteAgregados(item.producto)) {
       setProductoParaAgregados(item.producto)
       setItemEditandoId(item.id)
       setShowModalAgregados(true)
     }
   }
 
-  const handleDecrementarAgregado = (nombreAgregado: string) => {
+  const handleDecrementarAgregado = (nombreAgregado: string, tamaño: string, tipo: TipoAgregadoPedido) => {
     if (!itemEditandoId) return
 
     const pedidoActualizado = pedidoActual.map(item => {
       if (item.id === itemEditandoId) {
         const agregadosActualizados = item.agregados.map(agregado => {
-          if (agregado.nombre === nombreAgregado) {
+          if (agregado.nombre === nombreAgregado && agregado.tamaño === tamaño && agregado.tipo === tipo) {
             const nuevaCantidad = Math.max(0, agregado.cantidad - 1)
             return { ...agregado, cantidad: nuevaCantidad }
           }
@@ -2750,7 +2707,7 @@ function App() {
       case 'jugo_pulpa_500ml':
         return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA8InZUrf7tDU0OYwCCIfFKVUzAvuq4f-MkQ&s'
       default:
-        return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_32wkjAywb9XJupRHlYjNA89buxvW2UV8uA&s'
+        return ''
     }
   }
 
@@ -3521,10 +3478,10 @@ function App() {
               >
                 <img
                   className="bebida-card-image"
-                  src={getImagenBebida(bebida.id) || bebida.descripcion}
+                  src={bebida.descripcion || getImagenBebida(bebida.id) || undefined}
                   alt={bebida.nombre}
                   onError={(e) => {
-                    ;(e.currentTarget as HTMLImageElement).src = bebida.descripcion || getImagenBebida(bebida.id)
+                    e.currentTarget.style.display = 'none'
                   }}
                 />
                 <div className="bebida-card-overlay"></div>
@@ -3595,13 +3552,7 @@ function App() {
                 const esChorrillana = esChorrillanaPorId || chorrillanas.some(c => c.id === item.producto.id)
                 const esSalchipapa = esSalchipapaPorId || salchipapas.some(s => s.id === item.producto.id)
                 
-                // Verificar por categoría (para productos de la API)
-                const categoria = (item.producto as any).categoria?.toLowerCase() || ''
-                const esPapaFritaPorCategoria = categoria.includes('papa') && !categoria.includes('chorrillana') && !categoria.includes('salchipapa')
-                const esChorrillanaPorCategoria = categoria.includes('chorrillana') && !categoria.includes('salchipapa')
-                const esSalchipapaPorCategoria = categoria.includes('salchipapa')
-                
-                const esEditable = esPapaFrita || esChorrillana || esSalchipapa || esPapaFritaPorCategoria || esChorrillanaPorCategoria || esSalchipapaPorCategoria
+                const esEditable = permiteAgregados(item.producto)
                 
                 return (
                 <div 
@@ -3626,7 +3577,7 @@ function App() {
                                                    <div className="agregados-list">
                             {item.agregados.map((agregado, index) => (
                               <div key={index} className="agregado-en-pedido">
-                                {agregado.nombre} x{agregado.cantidad}
+                                {agregado.nombre} ({agregado.tamaño}) x{agregado.cantidad}
                               </div>
                             ))}
                           </div>
