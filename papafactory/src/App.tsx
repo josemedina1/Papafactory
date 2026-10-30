@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
+import { fetchJsonPrimeraUrlOk } from './apiProductos'
 import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro } from './categorias'
 
 // API URLs - Comentados temporalmente mientras se configura MockAPI
@@ -23,19 +24,6 @@ const URLS_CANDIDATAS_AGREGADOS = [
   `${MOCKAPI_BASE}/agregados`,
   `${MOCKAPI_BASE}/AGREGADOS`
 ]
-
-async function fetchJsonPrimeraUrlOk(urls: string[]): Promise<{ url: string; data: unknown }> {
-  let ultimoStatus = 0
-  for (const url of urls) {
-    const response = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' })
-    if (response.ok) {
-      const data = await response.json()
-      return { url, data }
-    }
-    ultimoStatus = response.status
-  }
-  throw new Error(`Ninguna URL respondió OK (último HTTP ${ultimoStatus}). Rutas probadas: ${urls.join(', ')}`)
-}
 
 function parseJsonAnidado(valor: unknown, maxDepth = 4): unknown {
   let v = valor
@@ -1230,6 +1218,7 @@ function App() {
   const [extras, setExtras] = useState<Producto[]>([])
   const [todosLosProductosAPI, setTodosLosProductosAPI] = useState<Producto[]>([])
   const [cargandoProductos, setCargandoProductos] = useState<boolean>(true)
+  const [errorProductos, setErrorProductos] = useState<string | null>(null)
   const [mostrarModalProducto, setMostrarModalProducto] = useState<boolean>(false)
   const [productoEditando, setProductoEditando] = useState<Producto | null>(null)
   const [productoCompletoEditando, setProductoCompletoEditando] = useState<ProductoAPI | null>(null)
@@ -1317,9 +1306,10 @@ function App() {
   const [agregadoEditando, setAgregadoEditando] = useState<AgregadoAPI | null>(null)
 
   // Función para obtener productos de la API
-  const cargarProductosDesdeAPI = async () => {
+  const cargarProductosDesdeAPI = async (conservarProductos = false) => {
     try {
       setCargandoProductos(true)
+      setErrorProductos(null)
       
       // Si USE_LOCAL_DATA está activo, usar solo datos locales
       if (USE_LOCAL_DATA) {
@@ -1349,6 +1339,11 @@ function App() {
       sincronizarProductosEnEstado(productosAPI.map(mapProductoAPIToProducto))
     } catch (error) {
       console.error('Error al cargar productos desde la API:', error)
+      if (conservarProductos) {
+        setErrorProductos('No se pudo actualizar el catálogo desde la API. Se conservan los últimos cambios confirmados. Recarga la página para reintentar.')
+        return
+      }
+      setErrorProductos('No se pudo cargar el catálogo desde la API. Se muestra el catálogo de respaldo; podría no incluir los productos nuevos. Recarga la página para reintentar.')
       // En caso de error, usar datos locales como fallback
       const productosLocales = [
         ...(productos.productos.papas_fritas.items as Producto[]),
@@ -1507,8 +1502,8 @@ function App() {
         throw new Error('Error al eliminar el producto')
       }
 
-      // Recargar productos
-      await cargarProductosDesdeAPI()
+      sincronizarProductosEnEstado(todosLosProductosAPI.filter((p) => p.id !== id))
+      await cargarProductosDesdeAPI(true)
     } catch (error) {
       console.error('Error al eliminar producto:', error)
       alert('Error al eliminar el producto')
@@ -1584,7 +1579,7 @@ function App() {
       }
 
       // Recargar productos desde la API sin caché para dejar el estado sincronizado
-      await cargarProductosDesdeAPI()
+      await cargarProductosDesdeAPI(true)
     } catch (error) {
       console.error('Error al guardar producto:', error)
       throw error
@@ -2893,6 +2888,7 @@ function App() {
         </div>
         
         <div className="gestor-content">
+          {errorProductos && <div role="alert" className="alert alert-warning">{errorProductos}</div>}
           <h2 className="gestor-subtitle">
             {pestañaActiva === 'productos'
               ? `Total Productos: ${todosLosProductosAPI.length}`
@@ -3352,6 +3348,8 @@ function App() {
           )}
         </div>
       </div>
+
+      {errorProductos && <div role="alert" className="alert alert-warning">{errorProductos}</div>}
 
       {/* Layout principal de 2 columnas */}
       <div className="main-layout">
