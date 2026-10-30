@@ -21,6 +21,7 @@ Implementado:
 - Corrección de la recarga después de guardar: se eliminó `?t=...`, que causaba 404.
 - Avisos de conexión y conservación de cambios confirmados si falla una recarga posterior.
 - Actualizador con consulta al iniciar, búsqueda manual, descarga con progreso y confirmación de reinicio.
+- El control de actualización es un icono circular de refresh, sin versión visible. Conserva nombres accesibles, indicación de actualización disponible, progreso y mensajes de error o pedido pendiente.
 - El botón aparece en Windows empaquetado; no en la web ni en Electron sin empaquetar.
 - La interfaz bloquea el reinicio con pedido pendiente. No instala automáticamente al cerrar.
 - GitHub Actions genera y publica versiones al subir cambios de `papafactory/` a `main`.

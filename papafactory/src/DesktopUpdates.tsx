@@ -34,11 +34,14 @@ export default function DesktopUpdates({ hasPendingOrder }: { hasPendingOrder: b
 
   if (!state || state.status === 'unsupported') return null
   const busy = state.status === 'checking' || state.status === 'downloading' || installing
-  const label = state.status === 'available' ? `Descargar v${state.version}`
+  const label = state.status === 'available' ? 'Descargar actualización'
     : state.status === 'downloaded' ? 'Actualizar y reiniciar'
     : state.status === 'checking' ? 'Buscando actualizaciones…'
     : state.status === 'downloading' ? `Descargando… ${state.percent || 0}%`
     : installing ? 'Preparando actualización…' : 'Buscar actualizaciones'
+  const message = state.status === 'error' ? state.message
+    : state.status === 'downloaded' && hasPendingOrder ? 'Finaliza el pedido actual antes de reiniciar.' : ''
+  const hint = message || (state.status === 'current' ? 'Estás al día. Buscar actualizaciones' : label)
   const run = async () => {
     const api = window.desktopUpdates
     if (!api) return
@@ -55,15 +58,15 @@ export default function DesktopUpdates({ hasPendingOrder }: { hasPendingOrder: b
   }
   return (
     <div className="desktop-updates">
-      <button type="button" className="btn-gestor" disabled={busy || (state.status === 'downloaded' && hasPendingOrder)} onClick={() => void run()}>
-        {label}
+      <button type="button" className="desktop-update-button" aria-label={label} title={hint} disabled={busy || (state.status === 'downloaded' && hasPendingOrder)} onClick={() => void run()}>
+        <svg className={busy ? 'desktop-update-spinning' : undefined} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+          <path d="M3 12a9 9 0 0 1 15.36-6.36L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.36 6.36L3 16M3 21v-5h5" />
+        </svg>
+        {(state.status === 'available' || state.status === 'downloaded') && <span className="desktop-update-dot" aria-hidden="true" />}
       </button>
-      <small role="status" aria-live="polite">
-        {state.status === 'error' ? state.message
-          : state.status === 'downloaded' && hasPendingOrder ? 'Finaliza el pedido actual antes de reiniciar.'
-          : state.status === 'current' ? `v${state.currentVersion} · Estás al día`
-          : `Versión ${state.currentVersion}`}
-      </small>
+      <span className="visually-hidden" role="status" aria-live="polite">{hint}</span>
+      {message && <small className="desktop-update-message">{message}</small>}
+      {state.status === 'downloading' && <small className="desktop-update-progress">{state.percent || 0}%</small>}
     </div>
   )
 }

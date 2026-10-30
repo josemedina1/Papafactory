@@ -1476,23 +1476,72 @@ body {
 }
 
 .desktop-updates {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  max-width: 280px;
+  position: relative;
+  flex-shrink: 0;
 }
 
-.desktop-updates small {
+.desktop-update-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--papa-yellow);
+  color: #171717;
+  cursor: pointer;
+}
+
+.desktop-update-button:hover { filter: brightness(0.94); }
+.desktop-update-button:focus-visible { outline: 3px solid #333; outline-offset: 3px; }
+
+.desktop-update-message {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 250px;
+  padding: 8px 12px;
+  border: 1px solid #e1bf00;
+  border-radius: 8px;
+  background: #fff9d6;
+  color: #333;
+  z-index: 20;
   font-size: 12px;
   line-height: 1.3;
-  text-align: center;
 }
 
-.desktop-updates button:disabled {
+.desktop-update-button:disabled {
   opacity: 0.65;
-  cursor: wait;
+  cursor: default;
 }
+
+.desktop-update-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: #16743b;
+}
+
+.desktop-update-progress {
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+}
+
+.desktop-update-spinning { animation: desktop-refresh-spin 1.2s linear infinite; }
+@keyframes desktop-refresh-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .desktop-update-spinning { animation: none; } }
 
 .fajita-card:focus-visible {
   outline: 3px solid #d79b00;
