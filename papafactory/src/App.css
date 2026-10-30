@@ -1505,3 +1505,18 @@ body {
   padding: 20px;
   color: #666;
 }
+
+.gestor-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.categoria-producto-card {
+  background: linear-gradient(135deg, #474747, #202020);
+  background-size: cover;
+  background-position: center;
+  color: white;
+  font: inherit;
+}

@@ -15,6 +15,8 @@ Implementado:
 - Los agregados se distinguen por nombre, tamaño y tipo para no mezclar precios y cantidades de M y L.
 - Bebestibles prioriza `imagen_producto` de la API sobre las imágenes históricas por ID; ya no aplica la misma imagen genérica a los IDs numéricos.
 - CRUD de productos con MockAPI. Crear desde un filtro preselecciona esa categoría.
+- Botón **Nueva categoría** junto a Nuevo Producto, con formulario, control de duplicados y categorías disponibles en filtros, selector de productos y secciones del menú de ventas.
+- Las categorías vacías se conservan en `localStorage` (`categoriasPapaFactory`) en ese navegador/app. Las categorías de productos se descubren al leer el catálogo de la API, por lo que aparecen en otros equipos cuando ya tienen productos. No hay un recurso independiente de categorías en la API; no afirmar sincronización de categorías vacías entre equipos.
 - Clasificación compartida que respeta la categoría asignada sobre el nombre del producto.
 - Corrección de la recarga después de guardar: se eliminó `?t=...`, que causaba 404.
 - Avisos de conexión y conservación de cambios confirmados si falla una recarga posterior.
@@ -31,6 +33,7 @@ Implementado:
 | `papafactory/src/App.tsx` | Ventas, pedidos, historial, impresión, login local, Gestor y CRUD. Archivo grande; editar con cuidado. |
 | `papafactory/src/App.css` | Estilos activos. |
 | `papafactory/src/categorias.ts` | Categorías y normalización compartida. |
+| `papafactory/src/ModalCategoria.tsx` | Creación de categorías con nombre validado y mensajes de error. |
 | `papafactory/src/apiProductos.ts` | Lectura del catálogo sin parámetros artificiales. |
 | `papafactory/src/productos.json` | Catálogo de respaldo. |
 | `papafactory/electron-simple.js` | Ventana principal, IPC autorizado y configuración del actualizador. |
@@ -108,7 +111,8 @@ Desplegar únicamente un sitio externo no actualiza los archivos de escritorio.
 
 ## Comprobaciones realizadas
 
-- `npm test`: **11 pruebas aprobadas** de categorías, tamaños de agregados, lectura de API y controlador de actualizaciones.
+- `npm test`: **14 pruebas aprobadas** de categorías personalizadas, almacenamiento de categorías, tamaños de agregados, lectura de API y controlador de actualizaciones.
+- Nueva categoría verificada en una sesión local separada (`127.0.0.1`): rechazo de alias duplicado, creación, filtro, preselección en Nuevo Producto y persistencia tras recargar. No se crearon productos de prueba en la API.
 - `npm run build`: TypeScript y Vite aprobados.
 - `npm run build-admin`: instalador local `1.0.0` generado en Windows.
 - Archivos de `app.asar` comparados con la compilación, incluidos preload y controlador.

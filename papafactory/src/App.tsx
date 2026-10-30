@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import './App.css'
 import DesktopUpdates from './DesktopUpdates'
+import ModalCategoria from './ModalCategoria'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
 import { fetchJsonPrimeraUrlOk } from './apiProductos'
-import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, categoriaDelProducto, permiteAgregados, tamanosDeAgregados } from './categorias'
+import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, categoriaDelProducto, permiteAgregados, tamanosDeAgregados, combinarCategorias, leerCategoriasGuardadas, mismaCategoria } from './categorias'
 
 // API URLs - Comentados temporalmente mientras se configura MockAPI
 // Para usar una API real, reemplaza con tus endpoints reales
@@ -482,6 +483,7 @@ function ModalProductoCRUD({
   producto,
   productoCompleto,
   categoriaInicial,
+  categorias,
   onSave
 }: {
   show: boolean;
@@ -489,6 +491,7 @@ function ModalProductoCRUD({
   producto: Producto | null;
   productoCompleto?: ProductoAPI | null;
   categoriaInicial: string;
+  categorias: string[];
   onSave: (producto: ProductoAPI) => Promise<void>;
 }) {
   const [nombre, setNombre] = useState<string>('')
@@ -507,14 +510,15 @@ function ModalProductoCRUD({
       setPrecioStr(productoCompleto.precio !== undefined ? String(productoCompleto.precio) : '')
       // Normalizar la categoría para que coincida con las opciones del select
       const catNormalizada = normalizarCategoriaParaFiltro(productoCompleto.categoria, productoCompleto.nombre) || ''
-      setCategoria(catNormalizada)
+      setCategoria(categorias.find(c => mismaCategoria(c, catNormalizada)) || catNormalizada)
       setImagen_producto(productoCompleto.imagen_producto || '')
     } else if (producto) {
       // Si solo tenemos el producto básico, usar esos datos
       setNombre(producto.nombre)
       setTamano(producto.tamaño)
       setPrecioStr(producto.precio !== undefined ? String(producto.precio) : '')
-      setCategoria(normalizarCategoriaParaFiltro(producto.categoria, producto.nombre) || '')
+      const cat = normalizarCategoriaParaFiltro(producto.categoria, producto.nombre) || ''
+      setCategoria(categorias.find(c => mismaCategoria(c, cat)) || cat)
       setImagen_producto(producto.descripcion || '')
     } else {
       // Si no hay producto, limpiar el formulario
@@ -525,7 +529,7 @@ function ModalProductoCRUD({
       setImagen_producto('')
     }
     setError('')
-  }, [producto, productoCompleto, categoriaInicial, show])
+  }, [producto, productoCompleto, categoriaInicial, show, categorias])
 
   if (!show) return null
 
@@ -682,7 +686,7 @@ function ModalProductoCRUD({
                 required
               >
                 <option value="">Seleccione una categoría</option>
-                {CATEGORIAS_PRODUCTOS.map((cat) => (
+                {categorias.map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
@@ -1219,6 +1223,19 @@ function App() {
   const [bebidas, setBebidas] = useState<Producto[]>([])
   const [extras, setExtras] = useState<Producto[]>([])
   const [todosLosProductosAPI, setTodosLosProductosAPI] = useState<Producto[]>([])
+  const [categoriasLocales, setCategoriasLocales] = useState<string[]>(() => {
+    try { return leerCategoriasGuardadas(localStorage.getItem('categoriasPapaFactory')) }
+    catch { return [] }
+  })
+  const [mostrarModalCategoria, setMostrarModalCategoria] = useState(false)
+  const categorias = useMemo(() => combinarCategorias(categoriasLocales, todosLosProductosAPI.map(p => normalizarCategoriaParaFiltro(p.categoria, p.nombre) || '')), [categoriasLocales, todosLosProductosAPI])
+  const crearCategoria = (nombre: string) => {
+    const nuevas = combinarCategorias(categoriasLocales, [nombre]).slice(CATEGORIAS_PRODUCTOS.length)
+    localStorage.setItem('categoriasPapaFactory', JSON.stringify(nuevas))
+    setCategoriasLocales(nuevas)
+    setFiltroCategoriaGestor(nombre)
+  }
+
   const [cargandoProductos, setCargandoProductos] = useState<boolean>(true)
   const [errorProductos, setErrorProductos] = useState<string | null>(null)
   const [mostrarModalProducto, setMostrarModalProducto] = useState<boolean>(false)
@@ -1272,22 +1289,6 @@ function App() {
     const extrasFiltradas = productosActualizados.filter(
       (p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Extras'
     )
-
-    if (
-      papasFiltradas.length === 0 &&
-      chorrillanasFiltradas.length === 0 &&
-      salchipapasFiltradas.length === 0 &&
-      bebidasFiltradas.length === 0 &&
-      extrasFiltradas.length === 0 &&
-      !productosActualizados.some((p) => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === 'Fajitas')
-    ) {
-      setPapasFritas(productosActualizados)
-      setChorrillanas([])
-      setSalchipapas([])
-      setBebidas([])
-      setExtras([])
-      return
-    }
 
     setPapasFritas(papasFiltradas)
     setChorrillanas(chorrillanasFiltradas)
@@ -2900,20 +2901,22 @@ function App() {
                       <i className="fa-solid fa-list"></i>
                     </button>
                   </div>
-                  <button
-                    className="btn-crear-producto"
-                    onClick={handleCrearProducto}
-                  >
-                    + Nuevo Producto
-                  </button>
+                  <div className="gestor-acciones">
+                    <button type="button" className="btn-crear-producto" onClick={() => setMostrarModalCategoria(true)}>
+                      + Nueva categoría
+                    </button>
+                    <button className="btn-crear-producto" onClick={handleCrearProducto}>
+                      + Nuevo Producto
+                    </button>
+                  </div>
                 </div>
                 <div className="gestor-filtros">
                   <span className="gestor-filtros-label">Filtrar por categoría:</span>
                   <div className="gestor-filtros-buttons">
-                    {['Todas', ...CATEGORIAS_PRODUCTOS].map((cat) => {
+                    {['Todas', ...categorias].map((cat) => {
                       const productosEnCategoria = cat === 'Todas'
                         ? todosLosProductosAPI.length
-                        : todosLosProductosAPI.filter(p => normalizarCategoriaParaFiltro(p.categoria, p.nombre) === cat).length
+                        : todosLosProductosAPI.filter(p => mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), cat)).length
                       return (
                         <button
                           key={cat}
@@ -2931,7 +2934,7 @@ function App() {
                   {todosLosProductosAPI
                     .filter((p) =>
                       filtroCategoriaGestor === 'Todas' ||
-                      normalizarCategoriaParaFiltro(p.categoria, p.nombre) === filtroCategoriaGestor
+                      mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), filtroCategoriaGestor)
                     )
                     .map((producto) => (
                     <div key={producto.id} className="producto-card-gestor">
@@ -2983,7 +2986,7 @@ function App() {
                 </div>
                 {(todosLosProductosAPI.length === 0 || todosLosProductosAPI.filter((p) =>
                   filtroCategoriaGestor === 'Todas' ||
-                  normalizarCategoriaParaFiltro(p.categoria, p.nombre) === filtroCategoriaGestor
+                  mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), filtroCategoriaGestor)
                 ).length === 0) && (
                   <div className="gestor-empty">
                     {todosLosProductosAPI.length === 0
@@ -3250,6 +3253,8 @@ function App() {
         </div>
       </div>
       
+      {mostrarModalCategoria && <ModalCategoria categorias={categorias} onClose={() => setMostrarModalCategoria(false)} onSave={crearCategoria} />}
+
       {/* Modal de CRUD de Productos */}
       <ModalProductoCRUD
         show={mostrarModalProducto}
@@ -3261,6 +3266,7 @@ function App() {
         producto={productoEditando}
         productoCompleto={productoCompletoEditando}
         categoriaInicial={filtroCategoriaGestor === 'Todas' ? '' : filtroCategoriaGestor}
+        categorias={categorias}
         onSave={handleGuardarProducto}
       />
 
@@ -3527,6 +3533,25 @@ function App() {
               </div>
             )}
           </div>
+          {categorias.filter(cat => !CATEGORIAS_PRODUCTOS.some(base => mismaCategoria(base, cat))).map(cat => {
+            const items = todosLosProductosAPI.filter(p => mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), cat))
+            return (
+              <section key={cat} aria-label={cat}>
+                <div className="section-title">{cat.toUpperCase()}</div>
+                <div className="papas-grid">
+                  {items.length ? items.map(producto => (
+                    <button type="button" className="papa-card categoria-producto-card" key={producto.id} onClick={() => agregarProductoAlPedido(producto)} style={producto.descripcion ? {
+                      backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url(${producto.descripcion})`
+                    } : undefined}>
+                      <h5>{producto.nombre}</h5>
+                      <div className="size">{producto.tamaño}</div>
+                      <div className="price">{formatearPrecio(producto.precio)}</div>
+                    </button>
+                  )) : <div className="categoria-empty">Aún no hay productos en esta categoría.</div>}
+                </div>
+              </section>
+            )
+          })}
         </div>
 
         {/* Columna del pedido (derecha) */}
@@ -4278,6 +4303,7 @@ function App() {
         producto={productoEditando}
         productoCompleto={productoCompletoEditando}
         categoriaInicial={filtroCategoriaGestor === 'Todas' ? '' : filtroCategoriaGestor}
+        categorias={categorias}
         onSave={handleGuardarProducto}
       />
 

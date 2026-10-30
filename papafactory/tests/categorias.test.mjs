@@ -1,12 +1,33 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, permiteAgregados, tamanosDeAgregados } from '../src/categorias.ts'
+import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, permiteAgregados, tamanosDeAgregados, combinarCategorias, leerCategoriasGuardadas, mismaCategoria } from '../src/categorias.ts'
 
 test('Fajitas está disponible y reconoce variaciones de la API', () => {
   assert.ok(CATEGORIAS_PRODUCTOS.includes('Fajitas'))
   for (const categoria of ['Fajitas', 'fajita', ' FAJÍTAS ']) {
     assert.equal(normalizarCategoriaParaFiltro(categoria), 'Fajitas')
   }
+})
+
+test('conserva categorías personalizadas aunque incluyan nombres de categorías existentes', () => {
+  assert.equal(normalizarCategoriaParaFiltro('Hamburguesas', 'Papas con carne'), 'Hamburguesas')
+  assert.equal(normalizarCategoriaParaFiltro('Fajitas especiales', 'Fajita XL'), 'Fajitas especiales')
+  assert.equal(normalizarCategoriaParaFiltro('  Papas   rellenas  '), 'Papas rellenas')
+  assert.equal(normalizarCategoriaParaFiltro('constructor'), 'constructor')
+  assert.equal(permiteAgregados({ id: '30', nombre: 'Papas con carne', categoria: 'Hamburguesas' }), false)
+})
+
+test('combina categorías locales y del catálogo sin duplicados ni nombres de filtros', () => {
+  const categorias = combinarCategorias(['Postres', '  Hamburguesas '], ['POSTRES', 'Bebidas', 'Todas', '', 'Hamburguesas'])
+  assert.deepEqual(categorias, [...CATEGORIAS_PRODUCTOS, 'Postres', 'Hamburguesas'])
+  assert.equal(mismaCategoria('Sándwiches', 'sandwiches'), true)
+})
+
+test('recupera categorías guardadas y tolera almacenamiento incompleto o dañado', () => {
+  assert.deepEqual(leerCategoriasGuardadas('["Postres",null,42,"POSTRES","Papas Fritas"]'), ['Postres'])
+  assert.deepEqual(leerCategoriasGuardadas(null), [])
+  assert.deepEqual(leerCategoriasGuardadas('roto'), [])
+  assert.deepEqual(leerCategoriasGuardadas('{}'), [])
 })
 
 test('las fajitas permiten agregados M y L sin cambiar el tamaño base del producto', () => {

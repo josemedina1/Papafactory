@@ -14,6 +14,8 @@
 - Mantener `USE_LOCAL_DATA = false` en uso normal.
 - No añadir timestamps a las consultas de productos: `?t=...` provoca 404 en el endpoint actual. Usar `fetch(url, { cache: 'no-store' })` de `src/apiProductos.ts`.
 - Mantener la clasificación en `src/categorias.ts`. La categoría del Gestor tiene prioridad sobre palabras del nombre del producto.
+- Conservar nombres de categorías personalizadas, incluso si contienen palabras como Fajitas o Papas. Solo los alias exactos se convierten a las categorías base. No volver a usar una lista fija para filtros o selectores.
+- Las categorías vacías usan `categoriasPapaFactory` en almacenamiento local; las que tienen productos también se descubren en la API. No afirmar que las categorías vacías se sincronizan entre equipos.
 - Para probar CRUD, usar datos simulados. No crear, borrar o modificar productos reales como prueba sin que forme parte de lo solicitado por el usuario.
 - No reemplazar silenciosamente cambios confirmados por el respaldo cuando falla una recarga.
 
