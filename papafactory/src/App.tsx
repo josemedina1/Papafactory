@@ -1319,6 +1319,7 @@ function App() {
           ...(productos.productos.papas_fritas.items as Producto[]),
           ...(productos.productos.chorrillanas.items as Producto[]),
           ...(productos.productos.salchipapas.items as Producto[]),
+          ...(productos.productos.fajitas.items as Producto[]),
           ...(productos.productos.bebidas.items as Producto[]),
           ...(productos.productos.extras.items as Producto[])
         ]
@@ -1351,6 +1352,7 @@ function App() {
         ...(productos.productos.papas_fritas.items as Producto[]),
         ...(productos.productos.chorrillanas.items as Producto[]),
         ...(productos.productos.salchipapas.items as Producto[]),
+          ...(productos.productos.fajitas.items as Producto[]),
         ...(productos.productos.bebidas.items as Producto[]),
         ...(productos.productos.extras.items as Producto[])
       ]

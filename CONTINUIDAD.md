@@ -66,9 +66,9 @@ no valores fijos para las pruebas. Algunos nombres o imágenes parecen de intent
 no borrar ni fusionar productos sin indicación del usuario.
 
 En una consulta posterior durante la última petición, el catálogo ya contenía una sola fajita:
-ID 26, `Fajita Base Lechuga`, tamaño L, precio $2.500. El usuario pide dos opciones L a $2.500 cada una.
-Se solicitó el nombre de la segunda; no crear un producto con nombre inventado ni restaurar los intentos antiguos.
-Esta modificación de interfaz no cambió productos de la API.
+ID 26, `Fajita Base Lechuga`, tamaño L, precio $2.500. El usuario confirmó la segunda opción: `Fajita Coleslaw`.
+Se agregó a la API, sin imagen inventada; ambas opciones son L a $2.500. También se incluyeron en el catálogo de respaldo.
+No restaurar los intentos antiguos ni limitar el CRUD a un número fijo de productos.
 
 El historial de pedidos y otros estados usan `localStorage`, por ejemplo
 `historialPedidosPapaFactory` y `usuarioAutenticadoPapaFactory`. No se sincronizan entre web y escritorio.
@@ -126,7 +126,7 @@ La detección y publicación están comprobadas; no presentarlas como prueba de 
 
 ## Pendientes y cómo continuar
 
-1. Leer la nueva petición y revisar `git status`. Está pendiente que el usuario indique el nombre de la segunda fajita L a $2.500; actualmente solo hay una en la API.
+1. Leer la nueva petición y revisar `git status`. Las dos fajitas actuales son Base Lechuga y Coleslaw, ambas L a $2.500; no queda otra función de negocio acordada pendiente.
 2. Para validar el actualizador completo, usar una instalación de prueba: búsqueda, descarga,
    bloqueo con pedido pendiente, confirmación, reinicio y persistencia del historial.
    No interrumpir ventas reales ni modificar el catálogo real como prueba.

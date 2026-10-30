@@ -196,6 +196,27 @@
           "moneda": "CLP"
         }
       ]
+    },
+    "fajitas": {
+      "categoria": "Fajitas",
+      "items": [
+        {
+          "id": "fajita_lechuga_l",
+          "nombre": "Fajita Base Lechuga",
+          "tamaño": "L",
+          "precio": 2500,
+          "moneda": "CLP",
+          "categoria": "Fajitas"
+        },
+        {
+          "id": "fajita_coleslaw_l",
+          "nombre": "Fajita Coleslaw",
+          "tamaño": "L",
+          "precio": 2500,
+          "moneda": "CLP",
+          "categoria": "Fajitas"
+        }
+      ]
     }
   },
   "configuracion": {
@@ -203,4 +224,4 @@
     "iva": 19,
     "fecha_actualizacion": "2026-04-13"
   }
-} 
+}
