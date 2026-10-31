@@ -66,6 +66,7 @@ interface ProductoClasificable {
   id: string;
   nombre: string;
   categoria?: string;
+  tamanosAgregados?: string[];
 }
 
 export function categoriaDelProducto(producto: ProductoClasificable): string | null {
@@ -74,9 +75,14 @@ export function categoriaDelProducto(producto: ProductoClasificable): string | n
 }
 
 export function permiteAgregados(producto: ProductoClasificable): boolean {
-  return ['Papas Fritas', 'Chorrillanas', 'Salchipapas', 'Fajitas'].includes(categoriaDelProducto(producto) || '')
+  return tamanosDeAgregados(producto).length > 0
 }
 
 export function tamanosDeAgregados(producto: ProductoClasificable): string[] {
-  return categoriaDelProducto(producto) === 'Fajitas' ? ['M', 'L'] : ['M', 'L', 'XL']
+  if (Array.isArray(producto.tamanosAgregados)) {
+    return ['M', 'L', 'XL'].filter(tamano => producto.tamanosAgregados!.includes(tamano))
+  }
+  const categoria = categoriaDelProducto(producto)
+  if (categoria === 'Fajitas') return ['L']
+  return ['Papas Fritas', 'Chorrillanas', 'Salchipapas'].includes(categoria || '') ? ['M', 'L', 'XL'] : []
 }

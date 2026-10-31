@@ -11,7 +11,7 @@ desde el Gestor y actualizar la app instalada mediante un botón, sin reinstalac
 Implementado:
 
 - **Fajitas** en menú de ventas, formulario y filtro del Gestor.
-- Fajitas abre el modal de agregados al agregarla y al editarla desde el pedido. Sus agregados permiten M y L; el tamaño base no cambia. Otros productos conservan M, L y XL.
+- Fajitas abre el modal de agregados al agregarla y al editarla desde el pedido. Sus agregados permiten solamente L; el tamaño base no cambia. Otros productos conservan M, L y XL.
 - Los agregados se distinguen por nombre, tamaño y tipo para no mezclar precios y cantidades de M y L.
 - Bebestibles prioriza `imagen_producto` de la API sobre las imágenes históricas por ID; ya no aplica la misma imagen genérica a los IDs numéricos.
 - CRUD de productos con MockAPI. Crear desde un filtro preselecciona esa categoría.
@@ -145,3 +145,14 @@ Clonar el repositorio y entregar al agente disponible el mensaje de continuidad 
 El código y esta documentación están en GitHub; los instaladores publicados están en Releases.
 `node_modules/`, `dist/` y `build-output/` se regeneran y no son necesarios para recuperar el código.
 Los datos de MockAPI y el historial local son recursos separados: no se recuperan únicamente clonando Git.
+
+## Ajuste del 31/10/2026
+
+- Las fajitas ahora muestran únicamente agregados L en el modal, tanto al agregar como al editar el pedido. Otros productos conservan M, L y XL. La prueba histórica con M/L descrita arriba corresponde al comportamiento anterior.
+
+## Tamaños de agregados por producto (31/10/2026)
+
+- Nuevo Producto y Editar Producto permiten marcar M, L y XL. La selección se envía en el campo de producto `tamanosAgregados` y se conserva en el mapeo desde la API y al editar.
+- Un arreglo vacío desactiva los agregados; una selección explícita prevalece sobre la categoría, también para categorías personalizadas.
+- Productos sin ese campo conservan el comportamiento anterior: fajitas solo L, papas/chorrillanas/salchipapas M/L/XL y otras categorías sin agregados.
+- No se modificaron productos reales para probar esta función.

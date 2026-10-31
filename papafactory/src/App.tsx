@@ -130,6 +130,7 @@ interface ProductoAPI {
   moneda: string;
   categoria: string;
   imagen_producto?: string;
+  tamanosAgregados?: string[];
 }
 
 interface AgregadoAPI {
@@ -499,6 +500,8 @@ function ModalProductoCRUD({
   const [precioStr, setPrecioStr] = useState<string>('')
   const [categoria, setCategoria] = useState<string>('')
   const [imagen_producto, setImagen_producto] = useState<string>('')
+  const [tamanosAgregados, setTamanosAgregados] = useState<string[]>([])
+  const [tamanosPersonalizados, setTamanosPersonalizados] = useState(false)
   const [error, setError] = useState<string>('')
   const [guardando, setGuardando] = useState<boolean>(false)
 
@@ -528,6 +531,9 @@ function ModalProductoCRUD({
       setCategoria(categoriaInicial)
       setImagen_producto('')
     }
+    const existente = productoCompleto || producto
+    setTamanosAgregados(tamanosDeAgregados(existente || { id: '', nombre: '', categoria: categoriaInicial }))
+    setTamanosPersonalizados(Array.isArray(existente?.tamanosAgregados))
     setError('')
   }, [producto, productoCompleto, categoriaInicial, show, categorias])
 
@@ -557,7 +563,8 @@ function ModalProductoCRUD({
         precio: precioNum,
         moneda: 'CLP', // Siempre CLP (campo no mostrado en el formulario)
         categoria: categoria || 'Papas Fritas', // Usar la categoría seleccionada o Papas Fritas por defecto
-        imagen_producto: imagen_producto || undefined
+        imagen_producto: imagen_producto || undefined,
+        tamanosAgregados: [...tamanosAgregados]
       }
 
       // Para edición, asegurar que tenemos un ID válido
@@ -672,7 +679,13 @@ function ModalProductoCRUD({
               </label>
               <select
                 value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
+                onChange={(e) => {
+                  const nuevaCategoria = e.target.value
+                  setCategoria(nuevaCategoria)
+                  if (!tamanosPersonalizados) {
+                    setTamanosAgregados(tamanosDeAgregados({ id: '', nombre: '', categoria: nuevaCategoria }))
+                  }
+                }}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -691,6 +704,24 @@ function ModalProductoCRUD({
                 ))}
               </select>
             </div>
+            <fieldset style={{ marginBottom: '20px', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', color: '#333' }}>
+              <legend style={{ fontSize: '16px', fontWeight: 'bold' }}>Tamaños de agregados</legend>
+              <div style={{ display: 'flex', gap: '24px' }}>
+                {['M', 'L', 'XL'].map(tamanoAgregado => (
+                  <label key={tamanoAgregado} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={tamanosAgregados.includes(tamanoAgregado)}
+                      onChange={e => {
+                        setTamanosPersonalizados(true)
+                        setTamanosAgregados(actuales => e.target.checked
+                          ? [...actuales, tamanoAgregado]
+                          : actuales.filter(t => t !== tamanoAgregado))
+                      }} />
+                    {tamanoAgregado}
+                  </label>
+                ))}
+              </div>
+              <p style={{ margin: '10px 0 0', fontSize: '14px' }}>Marca los tamaños disponibles para este producto. Sin marcas, el producto no tendrá agregados.</p>
+            </fieldset>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
                 URL de Imagen
@@ -1168,6 +1199,7 @@ interface Producto {
   moneda: string;
   descripcion?: string;
   categoria?: string;
+  tamanosAgregados?: string[];
 }
 
 interface Agregado {
@@ -1267,7 +1299,8 @@ function App() {
       precio: p.precio !== undefined ? Number(p.precio) : 0,
       moneda: p.moneda,
       descripcion: p.imagen_producto || raw.imagen || raw.image,
-      categoria: p.categoria || raw.category || raw.categoria_producto || raw.tipo || ''
+      categoria: p.categoria || raw.category || raw.categoria_producto || raw.tipo || '',
+      tamanosAgregados: p.tamanosAgregados
     }
   }
 
@@ -1481,7 +1514,8 @@ function App() {
       precio: producto.precio,
       moneda: producto.moneda,
       categoria: normalizarCategoriaParaFiltro(producto.categoria, producto.nombre) || '',
-      imagen_producto: producto.descripcion
+      imagen_producto: producto.descripcion,
+      tamanosAgregados: producto.tamanosAgregados
     })
     setMostrarModalProducto(true)
   }

@@ -30,10 +30,10 @@ test('recupera categorías guardadas y tolera almacenamiento incompleto o dañad
   assert.deepEqual(leerCategoriasGuardadas('{}'), [])
 })
 
-test('las fajitas permiten agregados M y L sin cambiar el tamaño base del producto', () => {
+test('las fajitas permiten solamente agregados L sin cambiar el tamaño base del producto', () => {
   const fajita = { id: '26', nombre: 'Fajita Base Lechuga', categoria: 'Fajitas', tamaño: 'L', precio: 2500 }
   assert.equal(permiteAgregados(fajita), true)
-  assert.deepEqual(tamanosDeAgregados(fajita), ['M', 'L'])
+  assert.deepEqual(tamanosDeAgregados(fajita), ['L'])
   assert.equal(fajita.tamaño, 'L')
   assert.equal(fajita.precio, 2500)
   assert.equal(permiteAgregados({ id: '27', nombre: 'Fajitas', categoria: 'Fajitas' }), true)
@@ -65,4 +65,15 @@ test('admite productos anteriores sin categoría y conserva las categorías exis
     assert.equal(normalizarCategoriaParaFiltro(categoria), categoria)
   }
   assert.equal(normalizarCategoriaParaFiltro('', 'Producto sin clasificar'), null)
+})
+
+test('la configuración por producto prevalece sobre la categoría y conserva el orden', () => {
+  const producto = { id: 'nuevo', nombre: 'Producto', categoria: 'Fajitas', tamanosAgregados: ['XL', 'M', 'M'] }
+  assert.deepEqual(tamanosDeAgregados(producto), ['M', 'XL'])
+  assert.equal(permiteAgregados(producto), true)
+  assert.deepEqual(tamanosDeAgregados({ ...producto, tamanosAgregados: ['L'] }), ['L'])
+  assert.deepEqual(tamanosDeAgregados({ ...producto, tamanosAgregados: [] }), [])
+  assert.equal(permiteAgregados({ ...producto, tamanosAgregados: [] }), false)
+  assert.equal(permiteAgregados({ ...producto, categoria: 'Postres', tamanosAgregados: ['L'] }), true)
+  assert.deepEqual(tamanosDeAgregados({ ...producto, tamanosAgregados: ['S', 'invalido'] }), [])
 })
