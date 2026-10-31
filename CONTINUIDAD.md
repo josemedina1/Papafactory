@@ -156,3 +156,12 @@ Los datos de MockAPI y el historial local son recursos separados: no se recupera
 - Un arreglo vacío desactiva los agregados; una selección explícita prevalece sobre la categoría, también para categorías personalizadas.
 - Productos sin ese campo conservan el comportamiento anterior: fajitas solo L, papas/chorrillanas/salchipapas M/L/XL y otras categorías sin agregados.
 - No se modificaron productos reales para probar esta función.
+
+## Guardado del Gestor (31/10/2026)
+
+- Productos y agregados usan guardarCatalogo.ts para enviar todos los campos y verificar la respuesta del servidor. Si devuelve datos distintos, el modal sigue abierto y muestra qué campos no fueron confirmados.
+- Se actualiza el catálogo visible con el registro confirmado y se evita recargar inmediatamente una lista que pueda devolver valores anteriores. Las imágenes se pueden quitar enviando una cadena vacía.
+- Pruebas de persistencia con API simulada; no se modificaron precios reales como prueba. El fallo original no se reprodujo de extremo a extremo contra la API real.
+
+- Se comprobó en navegador contra un servidor simulado: edición conjunta de nombre, tamaño, precio, categoría, imagen y agregados; guardado y persistencia después de recargar. La API real solo se leyó.
+- Los campos de precio permiten escribir y pegar formato chileno (5.500 o $5.500) y se interpretan sin perder los miles. El tamaño del producto es opcional.

@@ -1,3 +1,5 @@
+import { leerPrecio } from './precios'
+import { guardarRegistroCatalogo } from './guardarCatalogo'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import './App.css'
 import DesktopUpdates from './DesktopUpdates'
@@ -545,9 +547,9 @@ function ModalProductoCRUD({
     setGuardando(true)
 
     try {
-      const precioNum = precioStr.trim() === '' ? undefined : parseFloat(precioStr.replace(',', '.'))
-      if (!nombre.trim() || !tamano.trim()) {
-        setError('Ingrese el nombre y tamaño del producto')
+      const precioNum = leerPrecio(precioStr)
+      if (!nombre.trim()) {
+        setError('Ingrese el nombre del producto')
         return
       }
       if (precioNum === undefined || !Number.isFinite(precioNum) || precioNum < 0) {
@@ -563,7 +565,7 @@ function ModalProductoCRUD({
         precio: precioNum,
         moneda: 'CLP', // Siempre CLP (campo no mostrado en el formulario)
         categoria: categoria || 'Papas Fritas', // Usar la categoría seleccionada o Papas Fritas por defecto
-        imagen_producto: imagen_producto || undefined,
+        imagen_producto: imagen_producto.trim(),
         tamanosAgregados: [...tamanosAgregados]
       }
 
@@ -575,7 +577,7 @@ function ModalProductoCRUD({
       await onSave(productoData)
       onClose()
     } catch (err) {
-      setError('Error al guardar el producto')
+      setError(err instanceof Error ? err.message : 'Error al guardar el producto')
       console.error(err)
     } finally {
       setGuardando(false)
@@ -631,7 +633,7 @@ function ModalProductoCRUD({
             </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
-                Tamaño *
+                Tamaño (opcional)
               </label>
               <input
                 type="text"
@@ -645,8 +647,7 @@ function ModalProductoCRUD({
                   fontSize: '16px',
                   boxSizing: 'border-box'
                 }}
-                placeholder="Ingrese el tamaño"
-                required
+                placeholder="Ingrese el tamaño si corresponde"
               />
             </div>
             <div style={{ marginBottom: '20px' }}>
@@ -657,10 +658,7 @@ function ModalProductoCRUD({
                 type="text"
                 inputMode="numeric"
                 value={precioStr}
-                onChange={(e) => {
-                  const val = e.target.value
-                  if (val === '' || /^\d*\.?\d*$/.test(val)) setPrecioStr(val)
-                }}
+                onChange={(e) => setPrecioStr(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -828,9 +826,9 @@ function ModalAgregadoCRUD({
     setGuardando(true)
 
     try {
-      const precioM = precioMStr.trim() === '' ? NaN : parseFloat(precioMStr.replace(',', '.'))
-      const precioL = precioLStr.trim() === '' ? NaN : parseFloat(precioLStr.replace(',', '.'))
-      const precioXL = precioXLStr.trim() === '' ? NaN : parseFloat(precioXLStr.replace(',', '.'))
+      const precioM = leerPrecio(precioMStr)
+      const precioL = leerPrecio(precioLStr)
+      const precioXL = leerPrecio(precioXLStr)
 
       if (
         isNaN(precioM) || precioM < 0 ||
@@ -854,7 +852,7 @@ function ModalAgregadoCRUD({
       await onSave(agregadoData)
       onClose()
     } catch (err) {
-      setError('Error al guardar el agregado')
+      setError(err instanceof Error ? err.message : 'Error al guardar el agregado')
       console.error(err)
     } finally {
       setGuardando(false)
@@ -940,10 +938,7 @@ function ModalAgregadoCRUD({
                 type="text"
                 inputMode="numeric"
                 value={precioMStr}
-                onChange={(e) => {
-                  const val = e.target.value
-                  if (val === '' || /^\d*\.?\d*$/.test(val)) setPrecioMStr(val)
-                }}
+                onChange={(e) => setPrecioMStr(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -963,10 +958,7 @@ function ModalAgregadoCRUD({
                 type="text"
                 inputMode="numeric"
                 value={precioLStr}
-                onChange={(e) => {
-                  const val = e.target.value
-                  if (val === '' || /^\d*\.?\d*$/.test(val)) setPrecioLStr(val)
-                }}
+                onChange={(e) => setPrecioLStr(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -986,10 +978,7 @@ function ModalAgregadoCRUD({
                 type="text"
                 inputMode="numeric"
                 value={precioXLStr}
-                onChange={(e) => {
-                  const val = e.target.value
-                  if (val === '' || /^\d*\.?\d*$/.test(val)) setPrecioXLStr(val)
-                }}
+                onChange={(e) => setPrecioXLStr(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -1571,41 +1560,11 @@ function App() {
         return
       }
 
-      // Código original para API real
-      if (esEdicion && productoData.id) {
-        // Actualizar producto existente
-        const response = await fetch(`${productosApiRef.current}/${productoData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(productoData)
-        })
-
-        if (!response.ok) {
-          throw new Error('Error al actualizar el producto')
-        }
-
-        const productoActualizado: ProductoAPI = await response.json()
-        productoGuardado = mapProductoAPIToProducto(productoActualizado)
-      } else {
-        // Crear nuevo producto
-        const { id, ...productoSinId } = productoData
-        const response = await fetch(productosApiRef.current, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(productoSinId)
-        })
-
-        if (!response.ok) {
-          throw new Error('Error al crear el producto')
-        }
-
-        const productoCreado: ProductoAPI = await response.json()
-        productoGuardado = mapProductoAPIToProducto(productoCreado)
-      }
+      const { id, ...payload } = productoData
+      const confirmado = await guardarRegistroCatalogo<ProductoAPI>(
+        productosApiRef.current, payload, esEdicion ? id : undefined
+      )
+      productoGuardado = mapProductoAPIToProducto(confirmado)
 
       if (productoGuardado) {
         const productosActualizados = esEdicion
@@ -1617,8 +1576,7 @@ function App() {
         sincronizarProductosEnEstado(productosActualizados)
       }
 
-      // Recargar productos desde la API sin caché para dejar el estado sincronizado
-      await cargarProductosDesdeAPI(true)
+      // Conservar el registro confirmado: una recarga inmediata puede devolver datos anteriores.
     } catch (error) {
       console.error('Error al guardar producto:', error)
       throw error
@@ -1689,40 +1647,13 @@ function App() {
         return
       }
 
-      // Código original para API real
-      if (agregadoData.id && agregadoEditando) {
-        const payloadGuardar = mapearAgregadoParaAPI(agregadoData)
-        // Actualizar agregado existente
-        const response = await fetch(`${agregadosApiRef.current}/${agregadoData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payloadGuardar)
-        })
-
-        if (!response.ok) {
-          throw new Error('Error al actualizar el agregado')
-        }
-
-        await cargarAgregadosDesdeAPI()
-      } else {
-        // Crear nuevo agregado
-        const payloadGuardar = mapearAgregadoParaAPI(agregadoData)
-        const response = await fetch(agregadosApiRef.current, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payloadGuardar)
-        })
-
-        if (!response.ok) {
-          throw new Error('Error al crear el agregado')
-        }
-
-        await cargarAgregadosDesdeAPI()
-      }
+      const esEdicion = !!(agregadoData.id && agregadoEditando)
+      const confirmado = await guardarRegistroCatalogo<AgregadoAPI>(
+        agregadosApiRef.current, mapearAgregadoParaAPI(agregadoData), esEdicion ? agregadoData.id : undefined
+      )
+      setAgregadosAPI(actuales => esEdicion
+        ? actuales.map(a => a.id === confirmado.id ? confirmado : a)
+        : [...actuales, confirmado])
     } catch (error) {
       console.error('Error al guardar agregado:', error)
       throw error
