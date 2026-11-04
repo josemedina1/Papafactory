@@ -117,7 +117,7 @@ Desplegar únicamente un sitio externo no actualiza los archivos de escritorio.
 
 ## Comprobaciones realizadas
 
-- `npm test`: **17 pruebas aprobadas** de categorías personalizadas, orden, almacenamiento de categorías, tamaños de agregados, lectura de API y controlador de actualizaciones.
+- `npm test`: **24 pruebas aprobadas** de categorías personalizadas, orden, almacenamiento de categorías, tamaños por producto, precios chilenos, guardado del catálogo, lectura de API y controlador de actualizaciones. Se integraron antes de publicar los commits remotos `f5231c8` y `a7a8fdd`, conservando sus cambios de tamaños y persistencia.
 - Orden verificado en sesión de prueba (`127.0.0.1`): arrastre real de Chicken pop corn al inicio, mismo orden de secciones en el menú principal antes y después de recargar, movimiento por teclado y filtro funcionando. El orden de prueba no se aplicó al origen `localhost` del usuario.
 - Nueva categoría verificada en una sesión local separada (`127.0.0.1`): rechazo de alias duplicado, creación, filtro, preselección en Nuevo Producto y persistencia tras recargar. No se crearon productos de prueba en la API.
 - `npm run build`: TypeScript y Vite aprobados.
