@@ -372,6 +372,19 @@ body {
   gap: 8px;
 }
 
+.gestor-orden-ayuda {
+  color: #666;
+  font-size: 13px;
+  margin: -2px 0 10px;
+}
+
+.categoria-ordenable { cursor: grab; }
+.categoria-ordenable:active { cursor: grabbing; }
+.categoria-agarre { opacity: 0.5; margin-right: 6px; }
+.categoria-arrastrando { opacity: 0.4; }
+.categoria-destino { outline: 2px dashed #8c6b00; outline-offset: 3px; }
+.categoria-ordenable:focus-visible { outline: 3px solid #333; outline-offset: 3px; }
+
 .gestor-filtro-btn {
   padding: 8px 14px;
   border: 2px solid var(--papa-border);

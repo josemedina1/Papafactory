@@ -4,10 +4,11 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import './App.css'
 import DesktopUpdates from './DesktopUpdates'
 import ModalCategoria from './ModalCategoria'
+import FiltrosCategorias from './FiltrosCategorias'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
 import { fetchJsonPrimeraUrlOk } from './apiProductos'
-import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, categoriaDelProducto, permiteAgregados, tamanosDeAgregados, combinarCategorias, leerCategoriasGuardadas, mismaCategoria } from './categorias'
+import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, categoriaDelProducto, permiteAgregados, tamanosDeAgregados, combinarCategorias, leerCategoriasGuardadas, mismaCategoria, leerOrdenCategorias, ordenarCategorias } from './categorias'
 
 // API URLs - Comentados temporalmente mientras se configura MockAPI
 // Para usar una API real, reemplaza con tus endpoints reales
@@ -1249,7 +1250,26 @@ function App() {
     catch { return [] }
   })
   const [mostrarModalCategoria, setMostrarModalCategoria] = useState(false)
-  const categorias = useMemo(() => combinarCategorias(categoriasLocales, todosLosProductosAPI.map(p => normalizarCategoriaParaFiltro(p.categoria, p.nombre) || '')), [categoriasLocales, todosLosProductosAPI])
+  const [ordenCategorias, setOrdenCategorias] = useState<string[]>(() => {
+    try { return leerOrdenCategorias(localStorage.getItem('ordenCategoriasPapaFactory')) }
+    catch { return [] }
+  })
+  const [errorOrdenCategorias, setErrorOrdenCategorias] = useState('')
+  const categorias = useMemo(() => ordenarCategorias(
+    combinarCategorias(categoriasLocales, todosLosProductosAPI.map(p => normalizarCategoriaParaFiltro(p.categoria, p.nombre) || '')),
+    ordenCategorias
+  ), [categoriasLocales, todosLosProductosAPI, ordenCategorias])
+  const reordenarCategorias = (orden: string[]): boolean => {
+    try {
+      localStorage.setItem('ordenCategoriasPapaFactory', JSON.stringify(orden))
+      setOrdenCategorias(orden)
+      setErrorOrdenCategorias('')
+      return true
+    } catch {
+      setErrorOrdenCategorias('No se pudo guardar el orden en este dispositivo. Inténtalo nuevamente.')
+      return false
+    }
+  }
   const crearCategoria = (nombre: string) => {
     const nuevas = combinarCategorias(categoriasLocales, [nombre]).slice(CATEGORIAS_PRODUCTOS.length)
     localStorage.setItem('categoriasPapaFactory', JSON.stringify(nuevas))
@@ -2875,26 +2895,15 @@ function App() {
                     </button>
                   </div>
                 </div>
-                <div className="gestor-filtros">
-                  <span className="gestor-filtros-label">Filtrar por categoría:</span>
-                  <div className="gestor-filtros-buttons">
-                    {['Todas', ...categorias].map((cat) => {
-                      const productosEnCategoria = cat === 'Todas'
-                        ? todosLosProductosAPI.length
-                        : todosLosProductosAPI.filter(p => mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), cat)).length
-                      return (
-                        <button
-                          key={cat}
-                          type="button"
-                          className={`gestor-filtro-btn ${filtroCategoriaGestor === cat ? 'active' : ''}`}
-                          onClick={() => setFiltroCategoriaGestor(cat)}
-                        >
-                          {cat} ({productosEnCategoria})
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+                <FiltrosCategorias
+                  categorias={categorias}
+                  conteos={Object.fromEntries(categorias.map(cat => [cat, todosLosProductosAPI.filter(p => mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), cat)).length]))}
+                  total={todosLosProductosAPI.length}
+                  seleccionada={filtroCategoriaGestor}
+                  onSeleccionar={setFiltroCategoriaGestor}
+                  onReordenar={reordenarCategorias}
+                />
+                {errorOrdenCategorias && <div role="alert" className="alert alert-warning">{errorOrdenCategorias}</div>}
                 <div className={`productos-grid ${vistaProductosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
                   {todosLosProductosAPI
                     .filter((p) =>
@@ -3288,6 +3297,10 @@ function App() {
       <div className="main-layout">
         {/* Columna del menú (izquierda) */}
         <div className="menu-column">
+          {categorias.map(cat => {
+            switch (cat) {
+              case 'Papas Fritas': return (
+                <section key={cat} aria-label={cat}>
           {/* Sección Papas Fritas */}
           <div className="section-title">PAPAS FRITAS</div>
           <div className="papas-grid">
@@ -3334,7 +3347,10 @@ function App() {
               )
             )}
           </div>
-
+                </section>
+              )
+              case 'Chorrillanas': return (
+                <section key={cat} aria-label={cat}>
           {/* Sección Chorrillanas */}
           <div className="section-title">CHORRILLANAS</div>
           <div className="papas-grid">
@@ -3372,7 +3388,10 @@ function App() {
               </div>
             )}
           </div>
-
+                </section>
+              )
+              case 'Salchipapas': return (
+                <section key={cat} aria-label={cat}>
           {/* Sección Salchipapas */}
           <div className="section-title">SALCHIPAPAS</div>
           <div className="papas-grid">
@@ -3410,7 +3429,10 @@ function App() {
               </div>
             )}
           </div>
-
+                </section>
+              )
+              case 'Fajitas': return (
+                <section key={cat} aria-label={cat}>
           {/* Sección Fajitas */}
           <div className="section-title">FAJITAS</div>
           <div className="papas-grid">
@@ -3438,7 +3460,10 @@ function App() {
               </div>
             )}
           </div>
-
+                </section>
+              )
+              case 'Bebestibles': return (
+                <section key={cat} aria-label={cat}>
           {/* Sección Bebestibles */}
           <div className="section-title">BEBESTIBLES</div>
           <div className="bebestibles-grid">
@@ -3471,7 +3496,10 @@ function App() {
               </div>
             )}
           </div>
-
+                </section>
+              )
+              case 'Extras': return (
+                <section key={cat} aria-label={cat}>
           {/* Sección Extras */}
           <div className="section-title">EXTRAS</div>
           <div className="extras-grid">
@@ -3498,7 +3526,9 @@ function App() {
               </div>
             )}
           </div>
-          {categorias.filter(cat => !CATEGORIAS_PRODUCTOS.some(base => mismaCategoria(base, cat))).map(cat => {
+                </section>
+              )
+              default: {
             const items = todosLosProductosAPI.filter(p => mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), cat))
             return (
               <section key={cat} aria-label={cat}>
@@ -3516,6 +3546,9 @@ function App() {
                 </div>
               </section>
             )
+
+              }
+            }
           })}
         </div>
 

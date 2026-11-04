@@ -16,6 +16,7 @@
 - Mantener la clasificación en `src/categorias.ts`. La categoría del Gestor tiene prioridad sobre palabras del nombre del producto.
 - Conservar nombres de categorías personalizadas, incluso si contienen palabras como Fajitas o Papas. Solo los alias exactos se convierten a las categorías base. No volver a usar una lista fija para filtros o selectores.
 - Las categorías vacías usan `categoriasPapaFactory` en almacenamiento local; las que tienen productos también se descubren en la API. No afirmar que las categorías vacías se sincronizan entre equipos.
+- El orden de categorías usa `ordenCategoriasPapaFactory` localmente y debe reflejarse en Gestor y menú principal. Conservar el orden guardado mientras llega el catálogo de la API; añadir categorías nuevas al final y mantener `Todas` como filtro fijo.
 - Para probar CRUD, usar datos simulados. No crear, borrar o modificar productos reales como prueba sin que forme parte de lo solicitado por el usuario.
 - No reemplazar silenciosamente cambios confirmados por el respaldo cuando falla una recarga.
 

@@ -62,6 +62,34 @@ export function leerCategoriasGuardadas(valor: string | null): string[] {
   } catch { return [] }
 }
 
+export function leerOrdenCategorias(valor: string | null): string[] {
+  try {
+    const datos: unknown = JSON.parse(valor || '[]')
+    return Array.isArray(datos) ? datos.filter((v): v is string => typeof v === 'string').map(limpiarNombreCategoria).filter(Boolean) : []
+  } catch { return [] }
+}
+
+export function ordenarCategorias(disponibles: string[], orden: string[]): string[] {
+  const pendientes = new Map(disponibles.map(c => [claveCategoria(c), c]))
+  const resultado: string[] = []
+  for (const nombre of orden) {
+    const clave = claveCategoria(normalizarCategoriaParaFiltro(nombre) || nombre)
+    const categoria = pendientes.get(clave)
+    if (categoria) { resultado.push(categoria); pendientes.delete(clave) }
+  }
+  return [...resultado, ...pendientes.values()]
+}
+
+export function moverCategoria(categorias: string[], origen: string, destino: string): string[] {
+  const desde = categorias.findIndex(c => mismaCategoria(c, origen))
+  const hasta = categorias.findIndex(c => mismaCategoria(c, destino))
+  if (desde < 0 || hasta < 0 || desde === hasta) return [...categorias]
+  const nuevas = [...categorias]
+  const [categoria] = nuevas.splice(desde, 1)
+  nuevas.splice(hasta, 0, categoria)
+  return nuevas
+}
+
 interface ProductoClasificable {
   id: string;
   nombre: string;

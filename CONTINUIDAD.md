@@ -1,6 +1,6 @@
 # Continuidad de PapaFactory
 
-Fecha de esta guía: **30 de octubre de 2026**. Permite continuar sin el chat ni la cuenta del agente anterior.
+Fecha de esta guía: **4 de noviembre de 2026**. Permite continuar sin el chat ni la cuenta del agente anterior.
 Revisar Git y Releases para conocer cambios posteriores a esta fecha.
 
 ## Objetivo y estado
@@ -17,6 +17,7 @@ Implementado:
 - CRUD de productos con MockAPI. Crear desde un filtro preselecciona esa categoría.
 - Botón **Nueva categoría** junto a Nuevo Producto, con formulario, control de duplicados y categorías disponibles en filtros, selector de productos y secciones del menú de ventas.
 - Las categorías vacías se conservan en `localStorage` (`categoriasPapaFactory`) en ese navegador/app. Las categorías de productos se descubren al leer el catálogo de la API, por lo que aparecen en otros equipos cuando ya tienen productos. No hay un recurso independiente de categorías en la API; no afirmar sincronización de categorías vacías entre equipos.
+- Las categorías del Gestor se pueden arrastrar y soltar para ordenar; el menú principal y el selector usan el mismo orden. `Todas` es un filtro fijo. También se pueden mover con Alt + flechas al enfocar una categoría. El orden se guarda localmente en `ordenCategoriasPapaFactory`, no se sincroniza entre dispositivos.
 - Clasificación compartida que respeta la categoría asignada sobre el nombre del producto.
 - Corrección de la recarga después de guardar: se eliminó `?t=...`, que causaba 404.
 - Avisos de conexión y conservación de cambios confirmados si falla una recarga posterior.
@@ -35,6 +36,7 @@ Implementado:
 | `papafactory/src/App.css` | Estilos activos. |
 | `papafactory/src/categorias.ts` | Categorías y normalización compartida. |
 | `papafactory/src/ModalCategoria.tsx` | Creación de categorías con nombre validado y mensajes de error. |
+| `papafactory/src/FiltrosCategorias.tsx` | Filtros arrastrables y reordenamiento por teclado. |
 | `papafactory/src/apiProductos.ts` | Lectura del catálogo sin parámetros artificiales. |
 | `papafactory/src/productos.json` | Catálogo de respaldo. |
 | `papafactory/electron-simple.js` | Ventana principal, IPC autorizado y configuración del actualizador. |
@@ -73,6 +75,9 @@ En una consulta posterior durante la última petición, el catálogo ya contení
 ID 26, `Fajita Base Lechuga`, tamaño L, precio $2.500. El usuario confirmó la segunda opción: `Fajita Coleslaw`.
 Se agregó a la API, sin imagen inventada; ambas opciones son L a $2.500. También se incluyeron en el catálogo de respaldo.
 No restaurar los intentos antiguos ni limitar el CRUD a un número fijo de productos.
+Los precios y cantidades anteriores son históricos: el usuario sigue editando el catálogo real.
+En la prueba de orden del 04/11 se observaron otros precios y una categoría Chicken pop corn;
+no se modificó ningún producto ni se deben restaurar precios antiguos desde esta guía.
 
 El historial de pedidos y otros estados usan `localStorage`, por ejemplo
 `historialPedidosPapaFactory` y `usuarioAutenticadoPapaFactory`. No se sincronizan entre web y escritorio.
@@ -112,7 +117,8 @@ Desplegar únicamente un sitio externo no actualiza los archivos de escritorio.
 
 ## Comprobaciones realizadas
 
-- `npm test`: **14 pruebas aprobadas** de categorías personalizadas, almacenamiento de categorías, tamaños de agregados, lectura de API y controlador de actualizaciones.
+- `npm test`: **17 pruebas aprobadas** de categorías personalizadas, orden, almacenamiento de categorías, tamaños de agregados, lectura de API y controlador de actualizaciones.
+- Orden verificado en sesión de prueba (`127.0.0.1`): arrastre real de Chicken pop corn al inicio, mismo orden de secciones en el menú principal antes y después de recargar, movimiento por teclado y filtro funcionando. El orden de prueba no se aplicó al origen `localhost` del usuario.
 - Nueva categoría verificada en una sesión local separada (`127.0.0.1`): rechazo de alias duplicado, creación, filtro, preselección en Nuevo Producto y persistencia tras recargar. No se crearon productos de prueba en la API.
 - `npm run build`: TypeScript y Vite aprobados.
 - `npm run build-admin`: instalador local `1.0.0` generado en Windows.
@@ -131,7 +137,7 @@ La detección y publicación están comprobadas; no presentarlas como prueba de 
 
 ## Pendientes y cómo continuar
 
-1. Leer la nueva petición y revisar `git status`. Las dos fajitas actuales son Base Lechuga y Coleslaw, ambas L a $2.500; no queda otra función de negocio acordada pendiente.
+1. Leer la nueva petición y revisar `git status`. Los nombres y precios vigentes deben consultarse en la API; no queda otra función de negocio acordada pendiente.
 2. Para validar el actualizador completo, usar una instalación de prueba: búsqueda, descarga,
    bloqueo con pedido pendiente, confirmación, reinicio y persistencia del historial.
    No interrumpir ventas reales ni modificar el catálogo real como prueba.

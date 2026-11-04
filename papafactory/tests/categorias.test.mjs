@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, permiteAgregados, tamanosDeAgregados, combinarCategorias, leerCategoriasGuardadas, mismaCategoria } from '../src/categorias.ts'
+import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, permiteAgregados, tamanosDeAgregados, combinarCategorias, leerCategoriasGuardadas, mismaCategoria, moverCategoria, ordenarCategorias, leerOrdenCategorias } from '../src/categorias.ts'
 
 test('Fajitas está disponible y reconoce variaciones de la API', () => {
   assert.ok(CATEGORIAS_PRODUCTOS.includes('Fajitas'))
@@ -28,6 +28,34 @@ test('recupera categorías guardadas y tolera almacenamiento incompleto o dañad
   assert.deepEqual(leerCategoriasGuardadas(null), [])
   assert.deepEqual(leerCategoriasGuardadas('roto'), [])
   assert.deepEqual(leerCategoriasGuardadas('{}'), [])
+})
+
+test('mueve categorías base y personalizadas en ambas direcciones sin perder ninguna', () => {
+  const inicial = [...CATEGORIAS_PRODUCTOS, 'Chicken pop corn']
+  const primero = moverCategoria(inicial, 'Chicken pop corn', 'Papas Fritas')
+  assert.deepEqual(primero, ['Chicken pop corn', ...CATEGORIAS_PRODUCTOS])
+  assert.deepEqual(moverCategoria(primero, 'Chicken pop corn', 'Extras'), inicial)
+  assert.deepEqual(moverCategoria(inicial, 'Todas', 'Fajitas'), inicial)
+  assert.deepEqual(moverCategoria(inicial, 'Fajitas', 'Fajitas'), inicial)
+  assert.equal(inicial[0], 'Papas Fritas')
+})
+
+test('restaura el orden guardado al cargar el catálogo y agrega categorías nuevas al final', () => {
+  const guardado = leerOrdenCategorias(JSON.stringify(['Chicken pop corn', 'Fajitas', 'Bebidas', 'Fajitas', 'Retirada']))
+  const inicial = ordenarCategorias([...CATEGORIAS_PRODUCTOS], guardado)
+  assert.deepEqual(inicial.slice(0, 2), ['Fajitas', 'Bebestibles'])
+  const cargado = ordenarCategorias([...CATEGORIAS_PRODUCTOS, 'Chicken pop corn', 'Postres'], guardado)
+  assert.deepEqual(cargado.slice(0, 3), ['Chicken pop corn', 'Fajitas', 'Bebestibles'])
+  assert.equal(cargado.at(-1), 'Postres')
+  assert.equal(new Set(cargado).size, cargado.length)
+  assert.equal(cargado.length, CATEGORIAS_PRODUCTOS.length + 2)
+})
+
+test('un orden dañado no impide cargar las categorías ni modifica sus nombres', () => {
+  assert.deepEqual(leerOrdenCategorias('inválido'), [])
+  assert.deepEqual(leerOrdenCategorias('{}'), [])
+  assert.deepEqual(leerOrdenCategorias('[42,null,"  Fajitas  ",""]'), ['Fajitas'])
+  assert.deepEqual(ordenarCategorias(['Sándwiches', 'Fajitas'], ['SANDWICHES']), ['Sándwiches', 'Fajitas'])
 })
 
 test('las fajitas permiten solamente agregados L sin cambiar el tamaño base del producto', () => {
