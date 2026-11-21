@@ -1,0 +1,251 @@
+/*
+  Modo oscuro. Solo se aplica con <html data-theme="oscuro">; el modo claro no cambia.
+  Muchos colores están escritos en línea en App.tsx, por eso algunas reglas usan !important
+  o selectores por atributo style (React los guarda como rgb()).
+*/
+:root[data-theme="oscuro"] {
+  --papa-white: #1e1e1e;
+  --papa-gray-light: #121212;
+  --papa-gray-dark: #ececec;
+  --papa-border: #3d3d3d;
+  --papa-yellow-light: #3a3415;
+  --oscuro-fondo: #121212;
+  --oscuro-superficie: #1e1e1e;
+  --oscuro-superficie-2: #2a2a2a;
+  --oscuro-texto: #f1f1f1;
+  --oscuro-texto-suave: #b8b8b8;
+  --oscuro-borde: #3d3d3d;
+  --oscuro-borde-fuerte: #5a5a5a;
+  color-scheme: dark;
+  color: var(--oscuro-texto);
+  background-color: var(--oscuro-fondo);
+}
+
+:root[data-theme="oscuro"] body,
+:root[data-theme="oscuro"] #root,
+:root[data-theme="oscuro"] .contenedor-padre {
+  background-color: var(--oscuro-fondo);
+  color: var(--oscuro-texto);
+}
+
+/* Superficies */
+:root[data-theme="oscuro"] .modal-content {
+  background-color: var(--oscuro-superficie) !important;
+  color: var(--oscuro-texto);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="oscuro"] .modal-overlay { background-color: rgba(0, 0, 0, 0.7); }
+
+:root[data-theme="oscuro"] .app-header,
+:root[data-theme="oscuro"] .gestor-header,
+:root[data-theme="oscuro"] .menu-column,
+:root[data-theme="oscuro"] .pedido-column {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Textos con color fijo en línea (#333, #666, #555, #000) */
+:root[data-theme="oscuro"] [style*="color: rgb(51, 51, 51)"],
+:root[data-theme="oscuro"] [style*="color: rgb(0, 0, 0)"]:not([style*="background-color: rgb(255, 215, 0)"]):not([style*="background-color: rgba(255, 215, 0"]) {
+  color: var(--oscuro-texto) !important;
+}
+
+:root[data-theme="oscuro"] [style*="color: rgb(102, 102, 102)"],
+:root[data-theme="oscuro"] [style*="color: rgb(85, 85, 85)"],
+:root[data-theme="oscuro"] .text-muted {
+  color: var(--oscuro-texto-suave) !important;
+}
+
+/* Fondos claros fijos en línea */
+:root[data-theme="oscuro"] [style*="background-color: rgb(255, 255, 255)"],
+:root[data-theme="oscuro"] [style*="background-color: rgb(245, 245, 245)"],
+:root[data-theme="oscuro"] [style*="background-color: rgb(248, 249, 250)"],
+:root[data-theme="oscuro"] [style*="background-color: rgb(249, 249, 249)"],
+:root[data-theme="oscuro"] [style*="background: rgb(255, 255, 255)"],
+:root[data-theme="oscuro"] [style*="background: rgb(248, 249, 250)"] {
+  background-color: var(--oscuro-superficie-2) !important;
+  color: var(--oscuro-texto) !important;
+}
+
+/* Bordes claros fijos */
+:root[data-theme="oscuro"] [style*="border: 1px solid rgb(221, 221, 221)"],
+:root[data-theme="oscuro"] [style*="border: 2px solid rgb(221, 221, 221)"],
+:root[data-theme="oscuro"] [style*="border: 1px solid rgb(238, 238, 238)"] {
+  border-color: var(--oscuro-borde-fuerte) !important;
+}
+
+/* Campos de formulario */
+:root[data-theme="oscuro"] .modal-content input:not([type="checkbox"]):not([type="radio"]),
+:root[data-theme="oscuro"] .modal-content select,
+:root[data-theme="oscuro"] .modal-content textarea,
+:root[data-theme="oscuro"] .form-control,
+:root[data-theme="oscuro"] .form-select {
+  background-color: var(--oscuro-superficie-2) !important;
+  color: var(--oscuro-texto) !important;
+  border-color: var(--oscuro-borde-fuerte) !important;
+}
+
+:root[data-theme="oscuro"] .modal-content input::placeholder,
+:root[data-theme="oscuro"] .form-control::placeholder { color: #8f8f8f; }
+
+:root[data-theme="oscuro"] .modal-content label,
+:root[data-theme="oscuro"] .modal-content legend,
+:root[data-theme="oscuro"] .modal-content fieldset {
+  color: var(--oscuro-texto) !important;
+}
+
+:root[data-theme="oscuro"] .modal-content fieldset { border-color: var(--oscuro-borde-fuerte) !important; }
+
+:root[data-theme="oscuro"] .btn-cerrar { color: var(--oscuro-texto); background: transparent; }
+
+:root[data-theme="oscuro"] .btn-outline-secondary {
+  color: var(--oscuro-texto);
+  border-color: var(--oscuro-borde-fuerte);
+}
+
+/* Mensajes de error con colores fijos */
+:root[data-theme="oscuro"] [style*="background-color: rgb(248, 215, 218)"] {
+  background-color: #4a1d22 !important;
+  color: #ffd7db !important;
+  border-color: #7a2f37 !important;
+}
+
+/* Botones y tarjetas del Gestor */
+:root[data-theme="oscuro"] .gestor-filtro-btn.active,
+:root[data-theme="oscuro"] .btn-crear-producto:not(.btn-secundario),
+:root[data-theme="oscuro"] .btn-editar,
+:root[data-theme="oscuro"] .producto-precio-gestor {
+  color: #000;
+}
+
+:root[data-theme="oscuro"] .btn-crear-producto.btn-secundario {
+  background-color: transparent;
+  color: var(--papa-yellow);
+}
+
+:root[data-theme="oscuro"] .btn-crear-producto.btn-secundario:hover { color: #000; background-color: var(--papa-yellow); }
+
+:root[data-theme="oscuro"] .btn-categoria-accion.peligro { color: #ff8a8a; border-color: #7a2f37; }
+
+:root[data-theme="oscuro"] .categoria-empty,
+:root[data-theme="oscuro"] .gestor-orden-ayuda,
+:root[data-theme="oscuro"] .categoria-seleccionada-label,
+:root[data-theme="oscuro"] .categoria-seleccionada-conteo {
+  color: var(--oscuro-texto-suave);
+}
+
+:root[data-theme="oscuro"] .categoria-seleccionada-info strong { color: var(--oscuro-texto); }
+
+:root[data-theme="oscuro"] .dialogo-mensaje { color: var(--oscuro-texto); }
+
+/* Barra de navegación */
+:root[data-theme="oscuro"] .barra-nav .barra-nav-icono.MuiIconButton-root {
+  background: var(--oscuro-superficie-2);
+  border-color: var(--oscuro-borde-fuerte);
+  color: var(--oscuro-texto);
+}
+
+:root[data-theme="oscuro"] .barra-nav .barra-nav-icono.MuiIconButton-root:hover { border-color: var(--papa-yellow); }
+
+:root[data-theme="oscuro"] .barra-nav .barra-nav-salir.MuiIconButton-root {
+  background: #d32f2f;
+  border-color: #ef5350;
+  color: #fff;
+}
+
+:root[data-theme="oscuro"] .barra-nav-boton-principal:focus-visible,
+:root[data-theme="oscuro"] .barra-nav .barra-nav-icono.MuiIconButton-root.Mui-focusVisible {
+  outline-color: #90caf9;
+}
+
+:root[data-theme="oscuro"] .desktop-update-message {
+  background: #3a3415;
+  border-color: #8c7400;
+  color: var(--oscuro-texto);
+}
+
+/* Texto que usaba --papa-white sobre fondos de color: debe seguir blanco */
+:root[data-theme="oscuro"] .btn-eliminar,
+:root[data-theme="oscuro"] .btn-finalizar,
+:root[data-theme="oscuro"] .btn-cerrar-sesion,
+:root[data-theme="oscuro"] .btn-cerrar-sesion-header,
+:root[data-theme="oscuro"] .btn-categoria-accion.peligro:hover,
+:root[data-theme="oscuro"] .btn-categoria-accion.peligro:focus-visible {
+  color: #fff;
+}
+
+:root[data-theme="oscuro"] .desktop-update-dot { border-color: var(--oscuro-superficie); }
+
+/* Modales: encabezado y cuerpo */
+:root[data-theme="oscuro"] .modal-header,
+:root[data-theme="oscuro"] .modal-body {
+  background-color: var(--oscuro-superficie);
+  border-color: var(--oscuro-borde);
+}
+
+:root[data-theme="oscuro"] .modal-header h2,
+:root[data-theme="oscuro"] .btn-cerrar { color: var(--oscuro-texto); }
+:root[data-theme="oscuro"] .modal-header h3 { color: var(--oscuro-texto-suave); }
+
+/* Modal de agregados */
+:root[data-theme="oscuro"] .gramaje-btn {
+  background: var(--oscuro-superficie-2);
+  color: var(--oscuro-texto);
+}
+
+:root[data-theme="oscuro"] .gramaje-btn.active { background: var(--papa-yellow); color: #000; }
+
+:root[data-theme="oscuro"] .agregados-section h3,
+:root[data-theme="oscuro"] .agregado-nombre { color: var(--oscuro-texto); }
+
+:root[data-theme="oscuro"] .agregado-precio,
+:root[data-theme="oscuro"] .agregado-en-pedido { color: var(--oscuro-texto-suave); }
+
+:root[data-theme="oscuro"] .agregado-item {
+  background: var(--oscuro-superficie-2);
+  border-color: var(--oscuro-borde-fuerte);
+}
+
+:root[data-theme="oscuro"] .agregado-item:hover,
+:root[data-theme="oscuro"] .agregado-item.active { background: #3a3415; }
+
+:root[data-theme="oscuro"] .agregado-contador { border-top-color: var(--oscuro-borde); }
+
+:root[data-theme="oscuro"] .btn-contador {
+  background: var(--oscuro-superficie);
+  border-color: var(--oscuro-borde-fuerte);
+  color: var(--oscuro-texto);
+}
+
+:root[data-theme="oscuro"] .cantidad-display {
+  background: var(--oscuro-superficie);
+  border-color: var(--oscuro-borde-fuerte);
+  color: var(--oscuro-texto);
+}
+
+:root[data-theme="oscuro"] .pedido-item.clickeable:hover { background-color: var(--oscuro-superficie-2); }
+
+:root[data-theme="oscuro"] ::-webkit-scrollbar-track { background: var(--oscuro-superficie); }
+
+:root[data-theme="oscuro"] .categoria-ordenable:focus-visible,
+:root[data-theme="oscuro"] .desktop-update-button:focus-visible { outline-color: #90caf9; }
+
+/* Textos sobre amarillo: siempre oscuros para mantener el contraste */
+:root[data-theme="oscuro"] .total-label,
+:root[data-theme="oscuro"] .total-amount { color: #1a1a1a; }
+
+/* Textos que usaban negro sobre fondo blanco */
+:root[data-theme="oscuro"] .gestor-tab:hover,
+:root[data-theme="oscuro"] .gestor-tab.active,
+:root[data-theme="oscuro"] .precio-value,
+:root[data-theme="oscuro"] .stat-value,
+:root[data-theme="oscuro"] .detail-value {
+  color: var(--oscuro-texto);
+}
+
+:root[data-theme="oscuro"] .detail-value { color: var(--oscuro-texto-suave); }
+
+/* Botones amarillos: texto negro */
+:root[data-theme="oscuro"] .btn-login,
+:root[data-theme="oscuro"] .btn-gestor,
+:root[data-theme="oscuro"] .btn-volver { color: #000; }

@@ -3,6 +3,10 @@ import { guardarRegistroCatalogo } from './guardarCatalogo'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import './App.css'
 import DesktopUpdates from './DesktopUpdates'
+import BarraNavegacion from './BarraNavegacion'
+import IconButton from '@mui/material/IconButton'
+import Tooltip from '@mui/material/Tooltip'
+import CachedRounded from '@mui/icons-material/CachedRounded'
 import ModalCategoria, { ModalEliminarCategoria } from './ModalCategoria'
 import { cambiarCategoriaDeProductos } from './cambiarCategoriaProductos'
 import { useDialogo } from './Dialogo'
@@ -2894,24 +2898,16 @@ function App() {
     return (
       <>
         <div className="gestor-container">
-        <div className="gestor-header">
-          <h1 className="gestor-title">Gestor Papafactory</h1>
-          <div className="gestor-menu">
-            <DesktopUpdates hasPendingOrder={pedidoActual.length > 0} />
-            <button 
-              className="btn-volver"
-              onClick={() => setMostrarGestor(false)}
-            >
-              Volver a la página principal
-            </button>
-            <button 
-              className="btn-cerrar-sesion"
-              onClick={handleCerrarSesion}
-            >
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
+        <BarraNavegacion
+          titulo="Gestor Papafactory"
+          enGestor
+          usuarioAutenticado={usuarioAutenticado}
+          onIrGestor={() => setMostrarGestor(true)}
+          onVolver={() => setMostrarGestor(false)}
+          onCerrarSesion={handleCerrarSesion}
+          onIniciarSesion={() => setMostrarModalLogin(true)}
+          actualizaciones={<DesktopUpdates hasPendingOrder={pedidoActual.length > 0} />}
+        />
         
         <div className="gestor-content">
           {errorProductos && <div role="alert" className="alert alert-warning">{errorProductos}</div>}
@@ -3379,35 +3375,16 @@ function App() {
   return (
     <>
       {/* Header simple */}
-      <div className="app-header">
-        <h1 className="app-title">PAPA FACTORY</h1>
-        <div className="header-buttons">
-          <DesktopUpdates hasPendingOrder={pedidoActual.length > 0} />
-          {usuarioAutenticado ? (
-            <>
-              <button 
-                className="btn-gestor"
-                onClick={() => setMostrarGestor(true)}
-              >
-                Ir al Gestor
-              </button>
-              <button 
-                className="btn-cerrar-sesion-header"
-                onClick={handleCerrarSesion}
-              >
-                Cerrar Sesión
-              </button>
-            </>
-          ) : (
-            <button 
-              className="btn-login"
-              onClick={() => setMostrarModalLogin(true)}
-            >
-              Iniciar Sesión
-            </button>
-          )}
-        </div>
-      </div>
+      <BarraNavegacion
+        titulo="PAPA FACTORY"
+        enGestor={false}
+        usuarioAutenticado={usuarioAutenticado}
+        onIrGestor={() => setMostrarGestor(true)}
+        onVolver={() => setMostrarGestor(false)}
+        onCerrarSesion={handleCerrarSesion}
+        onIniciarSesion={() => setMostrarModalLogin(true)}
+        actualizaciones={<DesktopUpdates hasPendingOrder={pedidoActual.length > 0} />}
+      />
 
       {errorProductos && <div role="alert" className="alert alert-warning">{errorProductos}</div>}
 
@@ -3674,6 +3651,15 @@ function App() {
         <div className="pedido-column">
           <div className="pedido-header">
             <div className="pedido-title">PEDIDO ACTUAL</div>
+            <Tooltip title="Vaciar pedido" arrow>
+              <span>
+                <IconButton size="small" className="btn-vaciar-pedido" aria-label="Vaciar pedido"
+                  disabled={pedidoActual.length === 0}
+                  onClick={async () => { if (await confirmar('¿Vaciar todo el pedido actual?', 'Vaciar')) limpiarPedido() }}>
+                  <CachedRounded fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
           </div>
 
           <div className="pedido-items">
