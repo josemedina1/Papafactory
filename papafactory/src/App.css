@@ -1807,11 +1807,6 @@ body {
   .barra-nav-acciones { gap: 8px; }
 }
 
-@media (max-width: 420px) {
-  .barra-nav { justify-content: center; }
-  .barra-nav-marca { width: 100%; justify-content: center; }
-  .barra-nav-acciones { justify-content: center; width: 100%; }
-}
 
 /* Vaciar pedido: botón pequeño junto al título */
 .pedido-header {
@@ -1835,3 +1830,145 @@ body {
 }
 
 .pedido-header .btn-vaciar-pedido.MuiIconButton-root.Mui-disabled { opacity: 0.4; }
+
+/* ============================================================
+   Responsive del menú de ventas (notebooks pequeños y celulares)
+   La vista ocupa exactamente la altura de la pantalla: encabezado
+   arriba y menú + pedido en el espacio restante, sin doble scroll.
+   ============================================================ */
+.pedido-pie {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+body:has(.main-layout) .contenedor-padre { height: 100vh; height: 100dvh; }
+
+body:has(.main-layout) #root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body:has(.main-layout) #root > .barra-nav,
+body:has(.main-layout) #root > .alert { flex-shrink: 0; }
+
+body:has(.main-layout) .main-layout {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+}
+
+/* Notebooks con poca altura (1366x768, 1280x720, 1024x600…) */
+@media (max-height: 800px) {
+  #root { padding: 12px; }
+  .barra-nav.app-header { padding: 10px 16px; margin-bottom: 12px; }
+  .barra-nav .barra-nav-titulo { font-size: 22px; }
+  .barra-nav-boton-principal { min-height: 48px; }
+  .barra-nav .barra-nav-icono.MuiIconButton-root,
+  .barra-nav .desktop-update-button { width: 48px; height: 48px; }
+  .main-layout { gap: 12px; }
+  .menu-column, .pedido-column { padding: 14px 16px; }
+  .section-title { margin-bottom: 10px; }
+  .papas-grid, .bebestibles-grid, .extras-grid { margin-bottom: 18px; gap: 12px; }
+  .papa-card { min-height: 118px; padding: 12px; }
+  .pedido-header { margin-bottom: 12px; }
+  .pedido-item { padding: 10px 12px; margin-bottom: 8px; }
+  .pedido-items { margin-bottom: 12px; }
+  .pedido-total { padding: 10px 14px; margin-bottom: 10px; }
+  .btn-finalizar { padding: 12px; }
+}
+
+/* Notebooks angostos y tablets horizontales */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .main-layout { grid-template-columns: 1fr 280px; }
+  .papas-grid, .bebestibles-grid { gap: 10px; }
+  .papa-card h5 { font-size: 14px; }
+}
+
+/* Celulares y tablets verticales */
+@media (max-width: 768px) {
+  #root { padding: 8px; }
+
+  /* Encabezado en una sola fila */
+  .barra-nav.app-header,
+  .barra-nav.gestor-header {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    gap: 8px;
+    justify-content: space-between;
+  }
+  .barra-nav .barra-nav-marca { width: auto; justify-content: flex-start; gap: 10px; }
+  .barra-nav .barra-nav-titulo { width: auto; font-size: 18px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .barra-nav-acciones { width: auto; flex-wrap: nowrap; }
+  .barra-nav-boton-principal { min-height: 48px; padding: 0 12px; }
+  .barra-nav .barra-nav-icono.MuiIconButton-root,
+  .barra-nav .desktop-update-button { width: 48px; height: 48px; }
+
+  /* Menú arriba con su propio scroll; pedido compacto abajo */
+  body:has(.main-layout) .main-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .menu-column { flex: 1; min-height: 0; padding: 12px; }
+  .pedido-column {
+    flex: 0 0 auto;
+    max-height: 42%;
+    padding: 10px 12px;
+    border-top: 3px solid var(--papa-yellow);
+  }
+  .pedido-header { margin-bottom: 6px; }
+  .pedido-title { font-size: 16px; }
+  .pedido-items { margin-bottom: 8px; }
+  .pedido-items > div:only-child p { margin: 0; }
+  .pedido-items > div[style*="margin-top"] { margin-top: 4px !important; }
+  .pedido-item { padding: 8px 34px 8px 10px; margin-bottom: 6px; position: relative; }
+  .pedido-column { height: auto; }
+  .pedido-items { flex: 0 1 auto; }
+
+  .pedido-pie { flex-direction: row; gap: 8px; align-items: stretch; }
+  .pedido-total { flex: 1; margin-bottom: 0; padding: 8px 12px; }
+  .total-label { font-size: 15px; }
+  .total-amount { font-size: 18px; }
+  .btn-finalizar { flex: 1; padding: 8px 10px; font-size: 14px; }
+
+  /* Tarjetas del menú */
+  .section-title { font-size: 15px; margin-bottom: 8px; }
+  .papas-grid, .bebestibles-grid, .extras-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+    max-width: none;
+  }
+  .papa-card { min-height: 104px; padding: 8px; max-width: none; }
+  .papa-card h5 { font-size: 13px; line-height: 1.2; }
+  .papa-card .price { font-size: 16px; }
+  .bebida-card { height: 104px; max-width: none; }
+  .extra-card { max-width: none; height: 72px; padding: 8px; }
+}
+
+@media (max-width: 380px) {
+  .barra-nav .barra-nav-titulo { font-size: 16px; }
+  .papa-card h5 { font-size: 12px; }
+}
+
+/* Espacio para la "×" de quitar producto, que va en la esquina */
+.pedido-item { position: relative; padding-right: 36px; }
+@media (max-height: 800px) { .pedido-item { padding-right: 34px; } }
+
+/* Modales en celulares */
+@media (max-width: 576px) {
+  .modal-content { width: 96%; padding: 14px; margin: 8px auto; max-height: 94vh; max-height: 94dvh; }
+  .modal-header h2 { font-size: 1.2em; padding-right: 36px; }
+  .gramajes-section { gap: 8px; margin-bottom: 18px; }
+  .gramaje-btn { flex: 1; min-width: 0; padding: 12px 8px; }
+  .agregados-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+}

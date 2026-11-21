@@ -3732,7 +3732,7 @@ function App() {
           </div>
 
           {pedidoActual.length > 0 && (
-            <>
+            <div className="pedido-pie">
               <div className="pedido-total">
                 <div className="total-label">Total:</div>
                 <div className="total-amount">{formatearPrecio(calcularTotal())}</div>
@@ -3744,7 +3744,7 @@ function App() {
               >
                 Finalizar Pedido
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
