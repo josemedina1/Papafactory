@@ -3,12 +3,14 @@ import { guardarRegistroCatalogo } from './guardarCatalogo'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import './App.css'
 import DesktopUpdates from './DesktopUpdates'
-import ModalCategoria from './ModalCategoria'
+import ModalCategoria, { ModalEliminarCategoria } from './ModalCategoria'
+import { cambiarCategoriaDeProductos } from './cambiarCategoriaProductos'
+import { useDialogo } from './Dialogo'
 import FiltrosCategorias from './FiltrosCategorias'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import productos from './productos.json'
 import { fetchJsonPrimeraUrlOk } from './apiProductos'
-import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, categoriaDelProducto, permiteAgregados, tamanosDeAgregados, combinarCategorias, leerCategoriasGuardadas, mismaCategoria, leerOrdenCategorias, ordenarCategorias } from './categorias'
+import { CATEGORIAS_PRODUCTOS, normalizarCategoriaParaFiltro, categoriaDelProducto, permiteAgregados, tamanosDeAgregados, combinarCategorias, leerCategoriasGuardadas, mismaCategoria, leerOrdenCategorias, ordenarCategorias, contarProductosPorCategoria, filtrarCategoriasEliminadas, categoriasConProductos, quitarCategoriaDeLista, reemplazarCategoriaEnLista } from './categorias'
 
 // API URLs - Comentados temporalmente mientras se configura MockAPI
 // Para usar una API real, reemplaza con tus endpoints reales
@@ -488,6 +490,7 @@ function ModalProductoCRUD({
   productoCompleto,
   categoriaInicial,
   categorias,
+  tamanosExistentes = [],
   onSave
 }: {
   show: boolean;
@@ -496,6 +499,7 @@ function ModalProductoCRUD({
   productoCompleto?: ProductoAPI | null;
   categoriaInicial: string;
   categorias: string[];
+  tamanosExistentes?: string[];
   onSave: (producto: ProductoAPI) => Promise<void>;
 }) {
   const [nombre, setNombre] = useState<string>('')
@@ -649,7 +653,11 @@ function ModalProductoCRUD({
                   boxSizing: 'border-box'
                 }}
                 placeholder="Ingrese el tamaño si corresponde"
+                list="tamanos-producto-existentes"
               />
+              <datalist id="tamanos-producto-existentes">
+                {tamanosExistentes.map(t => <option key={t} value={t} />)}
+              </datalist>
             </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
@@ -1237,6 +1245,7 @@ function App() {
   const [mostrarModalLogin, setMostrarModalLogin] = useState<boolean>(false)
   const [usuarioAutenticado, setUsuarioAutenticado] = useState<boolean>(false)
   const [mostrarGestor, setMostrarGestor] = useState<boolean>(false)
+  const { confirmar, avisar, dialogo } = useDialogo()
 
   // Estados para productos desde la API
   const [papasFritas, setPapasFritas] = useState<Producto[]>([])
@@ -1255,10 +1264,21 @@ function App() {
     catch { return [] }
   })
   const [errorOrdenCategorias, setErrorOrdenCategorias] = useState('')
-  const categorias = useMemo(() => ordenarCategorias(
-    combinarCategorias(categoriasLocales, todosLosProductosAPI.map(p => normalizarCategoriaParaFiltro(p.categoria, p.nombre) || '')),
-    ordenCategorias
-  ), [categoriasLocales, todosLosProductosAPI, ordenCategorias])
+  // Categorías eliminadas en el Gestor (incluidas las base). Local a este navegador o app.
+  const [categoriasEliminadas, setCategoriasEliminadas] = useState<string[]>(() => {
+    try { return leerOrdenCategorias(localStorage.getItem('categoriasEliminadasPapaFactory')) }
+    catch { return [] }
+  })
+  const [categoriaEditando, setCategoriaEditando] = useState<string | null>(null)
+  const [categoriaEliminando, setCategoriaEliminando] = useState<string | null>(null)
+  const { categorias, conteosCategorias } = useMemo(() => {
+    const disponibles = ordenarCategorias(
+      combinarCategorias(categoriasLocales, todosLosProductosAPI.map(p => normalizarCategoriaParaFiltro(p.categoria, p.nombre) || '')),
+      ordenCategorias
+    )
+    const conteos = contarProductosPorCategoria(todosLosProductosAPI, disponibles)
+    return { categorias: filtrarCategoriasEliminadas(disponibles, categoriasEliminadas, conteos), conteosCategorias: conteos }
+  }, [categoriasLocales, todosLosProductosAPI, ordenCategorias, categoriasEliminadas])
   const reordenarCategorias = (orden: string[]): boolean => {
     try {
       localStorage.setItem('ordenCategoriasPapaFactory', JSON.stringify(orden))
@@ -1270,14 +1290,73 @@ function App() {
       return false
     }
   }
+  const guardarListasCategorias = (locales: string[], eliminadas: string[], orden: string[]) => {
+    localStorage.setItem('categoriasPapaFactory', JSON.stringify(locales))
+    localStorage.setItem('categoriasEliminadasPapaFactory', JSON.stringify(eliminadas))
+    localStorage.setItem('ordenCategoriasPapaFactory', JSON.stringify(orden))
+    setCategoriasLocales(locales)
+    setCategoriasEliminadas(eliminadas)
+    setOrdenCategorias(orden)
+  }
   const crearCategoria = (nombre: string) => {
-    const nuevas = combinarCategorias(categoriasLocales, [nombre]).slice(CATEGORIAS_PRODUCTOS.length)
-    localStorage.setItem('categoriasPapaFactory', JSON.stringify(nuevas))
-    setCategoriasLocales(nuevas)
-    setFiltroCategoriaGestor(nombre)
+    const categoria = normalizarCategoriaParaFiltro(nombre) || nombre
+    const nuevas = combinarCategorias(categoriasLocales, [categoria]).slice(CATEGORIAS_PRODUCTOS.length)
+    guardarListasCategorias(nuevas, quitarCategoriaDeLista(categoriasEliminadas, categoria), ordenCategorias)
+    setFiltroCategoriaGestor(categoria)
+  }
+  const productosDeCategoria = (categoria: string) =>
+    todosLosProductosAPI.filter(p => mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), categoria))
+
+  // Cambia la categoría de los productos en la API y actualiza la vista solo con lo confirmado.
+  const moverProductosACategoria = async (lista: Producto[], destino: string) => {
+    const { confirmados, error } = await cambiarCategoriaDeProductos(lista, async producto => {
+      if (USE_LOCAL_DATA) return { ...producto, categoria: destino }
+      const payload: Omit<ProductoAPI, 'id'> = {
+        nombre: producto.nombre,
+        tamano: producto.tamaño,
+        precio: producto.precio,
+        moneda: producto.moneda,
+        categoria: destino,
+        imagen_producto: producto.descripcion,
+        tamanosAgregados: producto.tamanosAgregados
+      }
+      return mapProductoAPIToProducto(await guardarRegistroCatalogo<ProductoAPI>(productosApiRef.current, payload, producto.id))
+    })
+    if (confirmados.length) {
+      const porId = new Map(confirmados.map(p => [p.id, p]))
+      sincronizarProductosEnEstado(todosLosProductosAPI.map(p => porId.get(p.id) || p))
+    }
+    if (error) throw error
+  }
+
+  const renombrarCategoria = async (anterior: string, nombre: string) => {
+    const nueva = normalizarCategoriaParaFiltro(nombre) || nombre
+    await moverProductosACategoria(productosDeCategoria(anterior), nueva)
+    const esBase = CATEGORIAS_PRODUCTOS.some(c => mismaCategoria(c, anterior))
+    const locales = combinarCategorias(quitarCategoriaDeLista(categoriasLocales, anterior), [nueva]).slice(CATEGORIAS_PRODUCTOS.length)
+    const eliminadas = quitarCategoriaDeLista(esBase ? [...categoriasEliminadas, anterior] : categoriasEliminadas, nueva)
+    guardarListasCategorias(locales, eliminadas, reemplazarCategoriaEnLista(categorias, anterior, nueva))
+    if (mismaCategoria(filtroCategoriaGestor, anterior)) setFiltroCategoriaGestor(nueva)
+  }
+
+  const eliminarCategoria = async (categoria: string, destino: string | null) => {
+    const lista = productosDeCategoria(categoria)
+    if (lista.length) {
+      if (!destino) throw new Error('Elige a qué categoría mover los productos.')
+      await moverProductosACategoria(lista, destino)
+    }
+    guardarListasCategorias(
+      quitarCategoriaDeLista(categoriasLocales, categoria),
+      [...quitarCategoriaDeLista(categoriasEliminadas, categoria), categoria],
+      quitarCategoriaDeLista(ordenCategorias.length ? ordenCategorias : categorias, categoria)
+    )
+    if (mismaCategoria(filtroCategoriaGestor, categoria)) setFiltroCategoriaGestor(destino || 'Todas')
   }
 
   const [cargandoProductos, setCargandoProductos] = useState<boolean>(true)
+  // El menú de ventas no muestra categorías sin productos; mientras carga conserva las secciones.
+  const categoriasMenu = cargandoProductos ? categorias : categoriasConProductos(categorias, conteosCategorias)
+  const tamanosProductos = useMemo(() => [...new Set(todosLosProductosAPI.map(p => (p.tamaño || '').trim()).filter(Boolean))], [todosLosProductosAPI])
   const [errorProductos, setErrorProductos] = useState<string | null>(null)
   const [mostrarModalProducto, setMostrarModalProducto] = useState<boolean>(false)
   const [productoEditando, setProductoEditando] = useState<Producto | null>(null)
@@ -1530,7 +1609,7 @@ function App() {
   }
 
   const handleEliminarProducto = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+    if (!(await confirmar('¿Estás seguro de que quieres eliminar este producto?'))) {
       return
     }
 
@@ -1554,7 +1633,7 @@ function App() {
       await cargarProductosDesdeAPI(true)
     } catch (error) {
       console.error('Error al eliminar producto:', error)
-      alert('Error al eliminar el producto')
+      void avisar('Error al eliminar el producto')
     }
   }
 
@@ -1618,7 +1697,7 @@ function App() {
   }
 
   const handleEliminarAgregado = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este agregado?')) {
+    if (!(await confirmar('¿Estás seguro de que quieres eliminar este agregado?'))) {
       return
     }
 
@@ -1642,7 +1721,7 @@ function App() {
       await cargarAgregadosDesdeAPI()
     } catch (error) {
       console.error('Error al eliminar agregado:', error)
-      alert('Error al eliminar el agregado')
+      void avisar('Error al eliminar el agregado')
     }
   }
 
@@ -1764,7 +1843,7 @@ function App() {
       
     } catch (error) {
       console.error('Error al guardar el pedido en el sistema:', error)
-      alert('Error al guardar el pedido en el sistema.')
+      void avisar('Error al guardar el pedido en el sistema.')
     }
   }
 
@@ -2108,7 +2187,7 @@ function App() {
 
   const procesarPedido = () => {
     if (pedidoActual.length === 0) {
-      alert('No hay productos en el pedido para procesar')
+      void avisar('No hay productos en el pedido para procesar')
       return
     }
     
@@ -2130,7 +2209,7 @@ function App() {
 
   const imprimirOrdenDirecta = (ordenNumero: string) => {
     if (pedidoActual.length === 0) {
-      alert('No hay orden para imprimir')
+      void avisar('No hay orden para imprimir')
       return
     }
 
@@ -2396,7 +2475,7 @@ function App() {
 
   const imprimirPedidoHistorial = () => {
     if (!pedidoSeleccionado) {
-      alert('No hay pedido seleccionado para imprimir')
+      void avisar('No hay pedido seleccionado para imprimir')
       return
     }
 
@@ -2886,23 +2965,42 @@ function App() {
                       <i className="fa-solid fa-list"></i>
                     </button>
                   </div>
-                  <div className="gestor-acciones">
-                    <button type="button" className="btn-crear-producto" onClick={() => setMostrarModalCategoria(true)}>
+                  <div className="gestor-acciones gestor-acciones-principales">
+                    <button type="button" className="btn-crear-producto btn-secundario" onClick={() => setMostrarModalCategoria(true)}>
                       + Nueva categoría
                     </button>
-                    <button className="btn-crear-producto" onClick={handleCrearProducto}>
+                    <button type="button" className="btn-crear-producto" onClick={handleCrearProducto}>
                       + Nuevo Producto
                     </button>
                   </div>
                 </div>
                 <FiltrosCategorias
                   categorias={categorias}
-                  conteos={Object.fromEntries(categorias.map(cat => [cat, todosLosProductosAPI.filter(p => mismaCategoria(normalizarCategoriaParaFiltro(p.categoria, p.nombre), cat)).length]))}
+                  conteos={conteosCategorias}
                   total={todosLosProductosAPI.length}
                   seleccionada={filtroCategoriaGestor}
                   onSeleccionar={setFiltroCategoriaGestor}
                   onReordenar={reordenarCategorias}
                 />
+                {filtroCategoriaGestor !== 'Todas' && categorias.some(c => mismaCategoria(c, filtroCategoriaGestor)) && (
+                  <div className="categoria-seleccionada-barra">
+                    <div className="categoria-seleccionada-info">
+                      <span className="categoria-seleccionada-label">Categoría seleccionada</span>
+                      <strong>{filtroCategoriaGestor}</strong>
+                      <span className="categoria-seleccionada-conteo">
+                        {conteosCategorias[filtroCategoriaGestor] || 0} producto{(conteosCategorias[filtroCategoriaGestor] || 0) === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <div className="categoria-seleccionada-acciones">
+                      <button type="button" className="btn-categoria-accion" onClick={() => setCategoriaEditando(filtroCategoriaGestor)}>
+                        <i className="fa-solid fa-pen" aria-hidden="true"></i> Editar
+                      </button>
+                      <button type="button" className="btn-categoria-accion peligro" onClick={() => setCategoriaEliminando(filtroCategoriaGestor)}>
+                        <i className="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {errorOrdenCategorias && <div role="alert" className="alert alert-warning">{errorOrdenCategorias}</div>}
                 <div className={`productos-grid ${vistaProductosGestor === 'lista' ? 'gestor-vista-lista' : ''}`}>
                   {todosLosProductosAPI
@@ -3227,7 +3325,26 @@ function App() {
         </div>
       </div>
       
+      {dialogo}
       {mostrarModalCategoria && <ModalCategoria categorias={categorias} onClose={() => setMostrarModalCategoria(false)} onSave={crearCategoria} />}
+      {categoriaEditando && (
+        <ModalCategoria
+          categorias={categorias}
+          categoriaActual={categoriaEditando}
+          cantidadProductos={conteosCategorias[categoriaEditando] || 0}
+          onClose={() => setCategoriaEditando(null)}
+          onSave={nombre => renombrarCategoria(categoriaEditando, nombre)}
+        />
+      )}
+      {categoriaEliminando && (
+        <ModalEliminarCategoria
+          categoria={categoriaEliminando}
+          categorias={categorias}
+          cantidadProductos={conteosCategorias[categoriaEliminando] || 0}
+          onClose={() => setCategoriaEliminando(null)}
+          onConfirm={destino => eliminarCategoria(categoriaEliminando, destino)}
+        />
+      )}
 
       {/* Modal de CRUD de Productos */}
       <ModalProductoCRUD
@@ -3241,6 +3358,7 @@ function App() {
         productoCompleto={productoCompletoEditando}
         categoriaInicial={filtroCategoriaGestor === 'Todas' ? '' : filtroCategoriaGestor}
         categorias={categorias}
+        tamanosExistentes={tamanosProductos}
         onSave={handleGuardarProducto}
       />
 
@@ -3297,7 +3415,7 @@ function App() {
       <div className="main-layout">
         {/* Columna del menú (izquierda) */}
         <div className="menu-column">
-          {categorias.map(cat => {
+          {categoriasMenu.map(cat => {
             switch (cat) {
               case 'Papas Fritas': return (
                 <section key={cat} aria-label={cat}>
@@ -4302,6 +4420,7 @@ function App() {
         productoCompleto={productoCompletoEditando}
         categoriaInicial={filtroCategoriaGestor === 'Todas' ? '' : filtroCategoriaGestor}
         categorias={categorias}
+        tamanosExistentes={tamanosProductos}
         onSave={handleGuardarProducto}
       />
 
@@ -4315,6 +4434,7 @@ function App() {
         agregado={agregadoEditando}
         onSave={handleGuardarAgregado}
       />
+      {dialogo}
     </>
   )
 }

@@ -114,3 +114,51 @@ export function tamanosDeAgregados(producto: ProductoClasificable): string[] {
   if (categoria === 'Fajitas') return ['L']
   return ['Papas Fritas', 'Chorrillanas', 'Salchipapas'].includes(categoria || '') ? ['M', 'L', 'XL'] : []
 }
+
+// Devuelve un mensaje de error o una cadena vacía si el nombre es válido.
+export function validarNombreCategoria(nombre: string, existentes: string[], actual?: string): string {
+  const categoria = limpiarNombreCategoria(nombre)
+  if (!categoria || categoria.length > 60) return 'Ingrese un nombre de 1 a 60 caracteres.'
+  if (['todas', 'todos'].includes(claveCategoria(categoria))) return 'Elija otro nombre; este se usa en los filtros.'
+  const normalizada = normalizarCategoriaParaFiltro(categoria) || categoria
+  if (actual && normalizada === actual) return 'El nombre no cambió.'
+  if (existentes.some(c => (!actual || !mismaCategoria(c, actual)) && mismaCategoria(c, normalizada))) return 'Ya existe una categoría con ese nombre.'
+  return ''
+}
+
+export function quitarCategoriaDeLista(lista: string[], nombre: string): string[] {
+  return lista.filter(c => !mismaCategoria(normalizarCategoriaParaFiltro(c) || c, nombre))
+}
+
+// Reemplaza en la misma posición; si no estaba, la añade al final.
+export function reemplazarCategoriaEnLista(lista: string[], anterior: string, nueva: string): string[] {
+  const resultado: string[] = []
+  let reemplazada = false
+  for (const c of lista) {
+    const actual = normalizarCategoriaParaFiltro(c) || c
+    if (mismaCategoria(actual, anterior) || mismaCategoria(actual, nueva)) {
+      if (!reemplazada) { resultado.push(nueva); reemplazada = true }
+    } else resultado.push(c)
+  }
+  return reemplazada ? resultado : [...resultado, nueva]
+}
+
+export function contarProductosPorCategoria(productos: ProductoClasificable[], categorias: string[]): Record<string, number> {
+  const conteos: Record<string, number> = Object.fromEntries(categorias.map(c => [c, 0]))
+  for (const producto of productos) {
+    const categoria = categoriaDelProducto(producto)
+    const destino = categorias.find(c => mismaCategoria(categoria, c))
+    if (destino) conteos[destino]++
+  }
+  return conteos
+}
+
+// Una categoría eliminada solo vuelve a mostrarse si alguien guarda productos en ella.
+export function filtrarCategoriasEliminadas(categorias: string[], eliminadas: string[], conteos: Record<string, number>): string[] {
+  return categorias.filter(c => (conteos[c] || 0) > 0 || !eliminadas.some(e => mismaCategoria(normalizarCategoriaParaFiltro(e) || e, c)))
+}
+
+// El menú de ventas muestra solo categorías con productos.
+export function categoriasConProductos(categorias: string[], conteos: Record<string, number>): string[] {
+  return categorias.filter(c => (conteos[c] || 0) > 0)
+}

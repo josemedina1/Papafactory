@@ -171,3 +171,22 @@ Los datos de MockAPI y el historial local son recursos separados: no se recupera
 
 - Se comprobó en navegador contra un servidor simulado: edición conjunta de nombre, tamaño, precio, categoría, imagen y agregados; guardado y persistencia después de recargar. La API real solo se leyó.
 - Los campos de precio permiten escribir y pegar formato chileno (5.500 o $5.500) y se interpretan sin perder los miles. El tamaño del producto es opcional.
+
+## Administración de categorías (21/11/2026)
+
+- En el Gestor, al seleccionar un filtro de categoría aparecen **Editar categoría** y **Eliminar categoría**, junto a Nueva categoría. Productos y agregados ya tenían crear, editar y eliminar.
+- Renombrar actualiza en MockAPI la categoría de cada producto (PUT con todos sus campos, verificado con `guardarCatalogo.ts`), conserva la posición en el orden y cambia el filtro activo. Si un guardado falla, se detiene, muestra cuántos se actualizaron y la vista refleja solo lo confirmado (`cambiarCategoriaProductos.ts`).
+- Eliminar una categoría con productos exige elegir a qué categoría moverlos; los productos no se borran. Sin productos, se elimina directamente.
+- Las categorías eliminadas (incluidas las base, como Fajitas) se guardan en `categoriasEliminadasPapaFactory`, solo en ese navegador o app. Reaparecen si algún producto de la API vuelve a tener esa categoría, o si se crea de nuevo con Nueva categoría.
+- El **menú de ventas oculta las categorías sin productos** (por ejemplo, tras borrar su último producto). El Gestor sigue mostrándolas con (0) para poder administrarlas. Mientras carga el catálogo se mantienen las secciones con su aviso de carga.
+- Renombrar una categoría base (Papas Fritas, Chorrillanas, etc.) a un nombre nuevo hace que sus productos usen la tarjeta genérica del menú, ya que las imágenes por defecto dependen del nombre base. Renombrar a un alias (por ejemplo "Papas") se rechaza como duplicado.
+- El campo Tamaño de producto sugiere los tamaños ya usados en el catálogo. Los tamaños de agregados siguen siendo M, L y XL porque MockAPI guarda sus precios en `precioM`, `precioL` y `precioXL`; añadir tamaños nuevos requiere cambiar ese formato.
+- Verificado: `npm test` (28 pruebas) y `npm run build`. En navegador, sesión aislada en `127.0.0.1:5174` con lectura real de la API y escrituras simuladas: borrar el último producto de Chorrillanas la oculta del menú; renombrar Pollo crispy → Pollo; eliminar Fajitas moviendo 2 productos a Extras; eliminar y volver a crear Chorrillanas. No se modificaron productos reales.
+- `.claude/launch.json` define `papafactory-dev` (puerto 5173) y `papafactory-prueba` (127.0.0.1:5174, origen separado para pruebas).
+- **Importante para próximas pruebas:** esa prueba simuló cambios sobre productos reales (Fajitas, Chorrillanas, Pollo crispy). La API no cambió, pero la pestaña de prueba mostró Fajitas eliminada y generó confusión. En adelante, crear productos y categorías con prefijo `TEST` en la API simulada, operar solo sobre ellos, limpiar el `localStorage` del origen de prueba y cerrar esa pestaña al terminar.
+
+## Diálogos propios y botones del Gestor (21/11/2026)
+
+- Se reemplazaron todos los `window.confirm` y `alert` de `App.tsx` por un diálogo dentro de la app (`src/Dialogo.tsx`, hook `useDialogo`). Motivo: en Electron para Windows, después de un diálogo nativo los campos de texto pueden quedar sin recibir teclado (el usuario no podía escribir al crear una categoría, por ejemplo tras eliminar un producto). No volver a usar diálogos nativos.
+- Verificado en navegador (127.0.0.1:5174, API simulada y solo datos `TEST`): crear TEST Categoría y TEST Producto, eliminarlo con el diálogo propio y escribir después en Nueva categoría. **No se reprodujo en la app de escritorio empaquetada**; confirmar en Windows tras la próxima release.
+- Botones: «+ Nueva categoría» (secundario, borde amarillo) y «+ Nuevo Producto» van juntos en la barra superior. Editar/Eliminar categoría están en una barra «Categoría seleccionada» bajo los filtros, con el conteo de productos. En móvil, los botones superiores van en 2 columnas (1 columna bajo 340 px) y no hay scroll horizontal a 375 px. Los modales de categoría se cierran con Escape.

@@ -1583,3 +1583,126 @@ body {
   color: white;
   font: inherit;
 }
+
+/* Acciones del Gestor: nueva categoría / nuevo producto */
+.gestor-acciones-principales .btn-crear-producto {
+  padding: 10px 20px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.btn-crear-producto.btn-secundario {
+  background-color: var(--papa-white);
+  border-color: var(--papa-yellow);
+}
+
+.btn-crear-producto.btn-secundario:hover {
+  background-color: var(--papa-yellow-light);
+  border-color: var(--papa-yellow-dark);
+}
+
+/* Barra de la categoría seleccionada */
+.categoria-seleccionada-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: -6px 0 20px;
+  padding: 10px 14px;
+  border: 1px solid var(--papa-border);
+  border-left: 4px solid var(--papa-yellow);
+  border-radius: 8px;
+  background: var(--papa-white);
+}
+
+.categoria-seleccionada-info {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-width: 0;
+  color: var(--papa-gray-dark);
+}
+
+.categoria-seleccionada-info strong {
+  font-size: 16px;
+  color: var(--papa-black);
+  overflow-wrap: anywhere;
+}
+
+.categoria-seleccionada-label,
+.categoria-seleccionada-conteo {
+  font-size: 13px;
+  color: #666;
+}
+
+.categoria-seleccionada-acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-categoria-accion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 2px solid var(--papa-border);
+  border-radius: 8px;
+  background: var(--papa-white);
+  color: var(--papa-gray-dark);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-categoria-accion:hover,
+.btn-categoria-accion:focus-visible {
+  border-color: var(--papa-yellow);
+  background: var(--papa-yellow-light);
+}
+
+.btn-categoria-accion.peligro {
+  color: #b02a37;
+  border-color: #f1b0b7;
+}
+
+.btn-categoria-accion.peligro:hover,
+.btn-categoria-accion.peligro:focus-visible {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: var(--papa-white);
+}
+
+.dialogo-app { max-width: 420px; }
+.dialogo-mensaje { font-size: 16px; margin: 4px 0 20px; color: #333; }
+
+@media (max-width: 768px) {
+  .gestor-acciones-principales {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gestor-acciones-principales .btn-crear-producto {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .categoria-seleccionada-acciones {
+    width: 100%;
+  }
+
+  .btn-categoria-accion {
+    flex: 1;
+  }
+}
+
+@media (max-width: 340px) {
+  .gestor-acciones-principales {
+    grid-template-columns: 1fr;
+  }
+}
+.dialogo-app .gestor-acciones > button { flex: 1; }

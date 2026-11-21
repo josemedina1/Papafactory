@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "papafactory-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "papafactory", "run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "papafactory-prueba",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "papafactory", "run", "dev", "--", "--host", "127.0.0.1", "--port", "5174", "--strictPort"],
+      "port": 5174,
+      "url": "http://127.0.0.1:5174"
+    }
+  ]
+}
